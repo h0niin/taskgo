@@ -14,3 +14,5 @@ export { BottomSheet } from './BottomSheet';
 export type { BottomSheetProps } from './BottomSheet';
 
 export { AppHeader } from './AppHeader';
+export { StaticMapCard } from './StaticMapCard';
+export { UpiPaymentSheet } from './UpiPaymentSheet';

@@ -1,15 +1,23 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { CustomerDashboardScreen } from '../screens/customer/CustomerDashboardScreen';
 import { CreateOrderScreen } from '../screens/customer/CreateOrderScreen';
 import { CustomerProfileScreen } from '../screens/customer/CustomerProfileScreen';
-import { CustomerTabParamList } from './types';
+import { OrderDetailScreen } from '../screens/customer/OrderDetailScreen';
+import { NegotiationThreadScreen } from '../screens/customer/NegotiationThreadScreen';
+import { AdvancePaymentScreen } from '../screens/customer/AdvancePaymentScreen';
+import { ProofReviewScreen } from '../screens/customer/ProofReviewScreen';
+import { FinalPaymentScreen } from '../screens/customer/FinalPaymentScreen';
+import { ReceiptScreen } from '../screens/customer/ReceiptScreen';
+import { CustomerStackParamList, CustomerTabParamList } from './types';
 import { LayoutDashboard, PlusCircle, User } from 'lucide-react-native';
-import { Card, CTA, Neutral } from '../theme';
+import { Card, Neutral } from '../theme';
 
 const Tab = createBottomTabNavigator<CustomerTabParamList>();
+const Stack = createNativeStackNavigator<CustomerStackParamList>();
 
-export function CustomerNavigator() {
+function CustomerTabs() {
   return (
     <Tab.Navigator
       screenOptions={{
@@ -66,3 +74,16 @@ export function CustomerNavigator() {
   );
 }
 
+export function CustomerNavigator() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="CustomerTabs" component={CustomerTabs} />
+      <Stack.Screen name="OrderDetail" component={OrderDetailScreen} />
+      <Stack.Screen name="NegotiationThread" component={NegotiationThreadScreen} />
+      <Stack.Screen name="AdvancePayment" component={AdvancePaymentScreen} />
+      <Stack.Screen name="ProofReview" component={ProofReviewScreen} />
+      <Stack.Screen name="FinalPayment" component={FinalPaymentScreen} />
+      <Stack.Screen name="Receipt" component={ReceiptScreen} />
+    </Stack.Navigator>
+  );
+}

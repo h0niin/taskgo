@@ -1,0 +1,432 @@
+import React from 'react';
+import {
+  Linking,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import {
+  BrutalBadge,
+  BrutalButton,
+  BrutalCard,
+  StaticMapCard,
+  STATUS_BADGE_COLORS,
+} from '../../components';
+import { Canvas, Card, CTA, Neutral } from '../../theme';
+import { useStore } from '../../store';
+import { formatOrderId, formatPhone, formatRupees } from '../../utils/format';
+import {
+  ArrowLeft,
+  Bike,
+  CheckCircle2,
+  Clock,
+  MapPin,
+  MessageSquare,
+  Phone,
+  ShieldCheck,
+  AlertCircle,
+} from 'lucide-react-native';
+
+export function OrderDetailScreen({ route, navigation }: any) {
+  const { orderId } = route.params;
+
+  const orders = useStore((s) => s.orders);
+  const cancelOrder = useStore((s) => s.cancelOrder);
+
+  const order = orders.find((o) => o.id === orderId);
+
+  if (!order) {
+    return (
+      <View style={{ flex: 1, backgroundColor: Canvas.purple, padding: 20, justifyContent: 'center' }}>
+        <Text style={{ fontWeight: '900', color: Neutral.white, fontSize: 18 }}>Order not found.</Text>
+        <BrutalButton label="Go Back" onPress={() => navigation.goBack()} />
+      </View>
+    );
+  }
+
+  const pickup = order.stops[0]?.address ?? 'Pickup';
+  const dropoff = order.stops[order.stops.length - 1]?.address ?? 'Dropoff';
+
+  const canCancel = ['PLACED', 'BIDDING', 'AGREED', 'AWAITING_DEPOSIT'].includes(order.status);
+
+  const handleCallRunner = () => {
+    Linking.openURL('tel:+919876543210');
+  };
+
+  return (
+    <View style={{ flex: 1, backgroundColor: Canvas.purple }}>
+      {/* Top Header Bar */}
+      <View
+        style={{
+          padding: 16,
+          backgroundColor: Neutral.black,
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}
+      >
+        <TouchableOpacity
+          onPress={() => navigation.navigate('Dashboard')}
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}
+        >
+          <ArrowLeft size={18} color={Neutral.white} />
+          <Text style={{ fontWeight: '900', color: Neutral.white, fontSize: 13, textTransform: 'uppercase' }}>
+            Errands
+          </Text>
+        </TouchableOpacity>
+
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <Text style={{ fontWeight: '900', color: '#D1D5DB', fontSize: 12 }}>
+            {formatOrderId(order.id)}
+          </Text>
+          <BrutalBadge
+            label={order.status}
+            color={STATUS_BADGE_COLORS[order.status] ?? Neutral.black}
+          />
+        </View>
+      </View>
+
+      <ScrollView contentContainerStyle={{ padding: 16, gap: 16 }}>
+        {/* Status Action Cards (State Machine Junctions) */}
+        {order.status === 'AWAITING_DEPOSIT' && (
+          <View
+            style={{
+              backgroundColor: CTA.lime,
+              borderWidth: 4,
+              borderColor: Neutral.black,
+              borderRadius: 20,
+              padding: 16,
+              gap: 8,
+            }}
+          >
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Text style={{ fontWeight: '900', fontSize: 18, textTransform: 'uppercase' }}>
+                Deal Agreed!
+              </Text>
+              <BrutalBadge label={`FEE: ${formatRupees(order.agreedFee ?? 0)}`} color={Neutral.black} />
+            </View>
+            <Text style={{ fontWeight: '700', fontSize: 13, color: '#1F2937' }}>
+              Pay {formatRupees(order.advanceAmount ?? 0)} advance deposit to dispatch {order.assignedRunnerName}.
+            </Text>
+            <BrutalButton
+              label={`Pay Advance (${formatRupees(order.advanceAmount ?? 0)}) →`}
+              color={Neutral.black}
+              fullWidth
+              size="md"
+              onPress={() => navigation.navigate('AdvancePayment', { orderId })}
+              style={{ marginTop: 4 }}
+            />
+          </View>
+        )}
+
+        {order.status === 'PROOF_SUBMITTED' && (
+          <View
+            style={{
+              backgroundColor: '#FEF08A',
+              borderWidth: 4,
+              borderColor: Neutral.black,
+              borderRadius: 20,
+              padding: 16,
+              gap: 8,
+            }}
+          >
+            <Text style={{ fontWeight: '900', fontSize: 18, textTransform: 'uppercase' }}>
+              📸 Proof Submitted
+            </Text>
+            <Text style={{ fontWeight: '700', fontSize: 13, color: '#374151' }}>
+              {order.assignedRunnerName} has submitted drop-off photos and shop bills for your approval.
+            </Text>
+            <BrutalButton
+              label="Review Proof Photos & Bill →"
+              color={CTA.lime}
+              fullWidth
+              size="md"
+              onPress={() => navigation.navigate('ProofReview', { orderId })}
+              style={{ marginTop: 4 }}
+            />
+          </View>
+        )}
+
+        {order.status === 'AWAITING_FINAL_PAYMENT' && (
+          <View
+            style={{
+              backgroundColor: '#A7F3D0',
+              borderWidth: 4,
+              borderColor: Neutral.black,
+              borderRadius: 20,
+              padding: 16,
+              gap: 8,
+            }}
+          >
+            <Text style={{ fontWeight: '900', fontSize: 18, textTransform: 'uppercase' }}>
+              💰 Ready for Final Settlement
+            </Text>
+            <Text style={{ fontWeight: '700', fontSize: 13, color: '#065F46' }}>
+              Proof approved! Settle the final balance of {formatRupees(order.finalBalance ?? 0)}.
+            </Text>
+            <BrutalButton
+              label={`Pay Final Balance (${formatRupees(order.finalBalance ?? 0)}) →`}
+              color={CTA.lime}
+              fullWidth
+              size="md"
+              onPress={() => navigation.navigate('FinalPayment', { orderId })}
+              style={{ marginTop: 4 }}
+            />
+          </View>
+        )}
+
+        {order.status === 'COMPLETED' && (
+          <BrutalCard backgroundColor={Card.mint}>
+            <View style={{ padding: 16, gap: 10, alignItems: 'center' }}>
+              <BrutalBadge label="COMPLETED & SETTLED" color="#10B981" starburst />
+              <Text style={{ fontWeight: '900', fontSize: 16, textAlign: 'center' }}>
+                All payments cleared. Receipt & rating unlocked.
+              </Text>
+              <BrutalButton
+                label="View Full Paper Receipt →"
+                color={Neutral.black}
+                fullWidth
+                onPress={() => navigation.navigate('Receipt', { orderId })}
+              />
+            </View>
+          </BrutalCard>
+        )}
+
+        {/* Live Tracking Map (if assigned or in progress) */}
+        {['ASSIGNED', 'IN_PROGRESS', 'PROOF_SUBMITTED'].includes(order.status) && (
+          <View style={{ gap: 12 }}>
+            <StaticMapCard
+              pickupAddress={pickup}
+              dropoffAddress={dropoff}
+              currentStep={order.progressStep ?? 'En route'}
+              etaText={order.progressStep === 'ON_THE_WAY' ? '5 mins' : '12-15 mins'}
+            />
+
+            {/* Runner Contact Card */}
+            <BrutalCard backgroundColor={Card.cream}>
+              <View style={{ padding: 16, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                <View style={{ gap: 2 }}>
+                  <Text style={{ fontWeight: '900', fontSize: 16 }}>
+                    {order.assignedRunnerName ?? 'Assigned Task Boy'}
+                  </Text>
+                  <Text style={{ fontWeight: '700', fontSize: 12, color: '#4B5563' }}>
+                    Status: {order.progressStep ?? 'Dispatched'}
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  onPress={handleCallRunner}
+                  style={{
+                    backgroundColor: '#10B981',
+                    borderWidth: 3,
+                    borderColor: Neutral.black,
+                    borderRadius: 999,
+                    paddingHorizontal: 16,
+                    paddingVertical: 8,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: 6,
+                  }}
+                >
+                  <Phone size={16} color={Neutral.black} />
+                  <Text style={{ fontWeight: '900', fontSize: 13, textTransform: 'uppercase' }}>
+                    Call
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </BrutalCard>
+          </View>
+        )}
+
+        {/* Bids Inbox (Sections 5 & 8 of SPEC) */}
+        {['PLACED', 'BIDDING'].includes(order.status) && (
+          <BrutalCard backgroundColor={Card.cream}>
+            <View style={{ padding: 18, gap: 14 }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                <View>
+                  <Text style={{ fontWeight: '900', fontSize: 16, textTransform: 'uppercase' }}>
+                    📥 Bids Inbox
+                  </Text>
+                  <Text style={{ fontWeight: '700', fontSize: 12, color: '#6B7280' }}>
+                    Task Boys proposing competitive fees
+                  </Text>
+                </View>
+                <BrutalBadge label={`${order.threads.length} BIDS`} color={Neutral.black} />
+              </View>
+
+              {order.threads.length === 0 ? (
+                <View
+                  style={{
+                    backgroundColor: '#FFFFFF',
+                    borderWidth: 2,
+                    borderColor: Neutral.black,
+                    borderRadius: 12,
+                    padding: 20,
+                    alignItems: 'center',
+                    gap: 6,
+                  }}
+                >
+                  <Clock size={28} color="#6B7280" />
+                  <Text style={{ fontWeight: '900', fontSize: 14, textTransform: 'uppercase' }}>
+                    Awaiting First Bid
+                  </Text>
+                  <Text style={{ fontWeight: '700', fontSize: 12, color: '#6B7280', textAlign: 'center' }}>
+                    Your request is live on the Kozhikode runner feed. Bids will arrive shortly!
+                  </Text>
+                </View>
+              ) : (
+                <View style={{ gap: 10 }}>
+                  {order.threads.map((thread) => {
+                    const latestOffer = thread.offers[thread.offers.length - 1];
+                    const price = latestOffer?.price ?? 0;
+                    const note = latestOffer?.note ?? 'Ready to run errand';
+
+                    return (
+                      <TouchableOpacity
+                        key={thread.id}
+                        activeOpacity={0.8}
+                        onPress={() =>
+                          navigation.navigate('NegotiationThread', {
+                            orderId: order.id,
+                            threadId: thread.id,
+                          })
+                        }
+                      >
+                        <View
+                          style={{
+                            backgroundColor: '#FFFFFF',
+                            borderWidth: 3,
+                            borderColor: Neutral.black,
+                            borderRadius: 14,
+                            padding: 14,
+                            gap: 8,
+                          }}
+                        >
+                          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                              <Bike size={16} color="#F97316" />
+                              <Text style={{ fontWeight: '900', fontSize: 14 }}>
+                                {thread.runnerName}
+                              </Text>
+                            </View>
+                            <Text style={{ fontWeight: '900', fontSize: 20, color: Neutral.black }}>
+                              {formatRupees(price)}
+                            </Text>
+                          </View>
+
+                          <Text
+                            style={{
+                              fontWeight: '700',
+                              fontSize: 12,
+                              color: '#4B5563',
+                              fontStyle: 'italic',
+                            }}
+                            numberOfLines={2}
+                          >
+                            "{note}"
+                          </Text>
+
+                          <View
+                            style={{
+                              flexDirection: 'row',
+                              justifyContent: 'space-between',
+                              alignItems: 'center',
+                              borderTopWidth: 1.5,
+                              borderColor: '#E5E7EB',
+                              paddingTop: 6,
+                            }}
+                          >
+                            <Text style={{ fontWeight: '700', fontSize: 11, color: '#6B7280' }}>
+                              {thread.offers.length} message{thread.offers.length > 1 ? 's' : ''} in thread
+                            </Text>
+                            <Text style={{ fontWeight: '900', fontSize: 12, color: '#8B5CF6' }}>
+                              Open Negotiation →
+                            </Text>
+                          </View>
+                        </View>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              )}
+            </View>
+          </BrutalCard>
+        )}
+
+        {/* Route Stops Summary */}
+        <BrutalCard backgroundColor="#FFFFFF">
+          <View style={{ padding: 18, gap: 12 }}>
+            <Text style={{ fontWeight: '900', fontSize: 14, textTransform: 'uppercase' }}>
+              Route Checkpoints ({order.stops.length})
+            </Text>
+
+            <View style={{ gap: 10 }}>
+              {order.stops.map((stop, i) => (
+                <View key={stop.id} style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10 }}>
+                  <View
+                    style={{
+                      backgroundColor: i === 0 ? '#10B981' : i === order.stops.length - 1 ? '#EF4444' : '#F97316',
+                      width: 24,
+                      height: 24,
+                      borderRadius: 12,
+                      borderWidth: 2,
+                      borderColor: Neutral.black,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <Text style={{ fontWeight: '900', fontSize: 11, color: Neutral.white }}>
+                      {i + 1}
+                    </Text>
+                  </View>
+
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontWeight: '900', fontSize: 14 }}>{stop.address}</Text>
+                    {stop.landmark ? (
+                      <Text style={{ fontWeight: '700', fontSize: 12, color: '#6B7280' }}>
+                        Landmark: {stop.landmark}
+                      </Text>
+                    ) : null}
+                    {stop.contactName ? (
+                      <Text style={{ fontWeight: '700', fontSize: 12, color: '#6B7280' }}>
+                        Contact: {stop.contactName} ({stop.contactPhone ? formatPhone(stop.contactPhone) : ''})
+                      </Text>
+                    ) : null}
+                  </View>
+                </View>
+              ))}
+            </View>
+          </View>
+        </BrutalCard>
+
+        {/* Edge-Case Instructions */}
+        <BrutalCard backgroundColor={Card.cream}>
+          <View style={{ padding: 16, gap: 6 }}>
+            <Text style={{ fontWeight: '900', fontSize: 13, textTransform: 'uppercase' }}>
+              Special Instructions
+            </Text>
+            <Text style={{ fontWeight: '700', fontSize: 13, color: '#1F2937', lineHeight: 18 }}>
+              {order.edgeCaseInstructions}
+            </Text>
+          </View>
+        </BrutalCard>
+
+        {/* Cancel Order (Allowed pre-assigned with no charge) */}
+        {canCancel && (
+          <BrutalButton
+            label="Cancel Errand"
+            color="#EF4444"
+            fullWidth
+            size="sm"
+            onPress={() => {
+              cancelOrder(order.id);
+              navigation.goBack();
+            }}
+            style={{ marginBottom: 20 }}
+          />
+        )}
+      </ScrollView>
+    </View>
+  );
+}
+

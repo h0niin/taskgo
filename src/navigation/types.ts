@@ -1,8 +1,7 @@
 // ─── Navigation Type Declarations ─────────────────────────────────────────────
-// All navigator param lists in one place for typed useNavigation / useRoute.
-
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import type { CompositeNavigationProp, RouteProp } from '@react-navigation/native';
 
 // ─── Root (auth gate) ────────────────────────────────────────────────────────
 
@@ -20,13 +19,16 @@ export type CustomerTabParamList = {
   Profile: undefined;
 };
 
-// ─── Customer stack (within each tab, for drill-downs in later steps) ─────────
+// ─── Customer stack navigator (Step 4 drill-downs) ───────────────────────────
 
 export type CustomerStackParamList = {
-  // Placeholder roots — screens added in Step 4
-  CustomerDashboard: undefined;
-  CustomerNewOrder: undefined;
-  CustomerProfile: undefined;
+  CustomerTabs: undefined;
+  OrderDetail: { orderId: string };
+  NegotiationThread: { orderId: string; threadId: string };
+  AdvancePayment: { orderId: string };
+  ProofReview: { orderId: string };
+  FinalPayment: { orderId: string };
+  Receipt: { orderId: string };
 };
 
 // ─── Runner tab navigator ────────────────────────────────────────────────────
@@ -40,5 +42,8 @@ export type RunnerTabParamList = {
 
 export type RootNavProp = NativeStackNavigationProp<RootStackParamList>;
 export type CustomerTabNavProp = BottomTabNavigationProp<CustomerTabParamList>;
+export type CustomerStackNavProp = NativeStackNavigationProp<CustomerStackParamList>;
 export type RunnerTabNavProp   = BottomTabNavigationProp<RunnerTabParamList>;
 
+export type CustomerStackRouteProp<T extends keyof CustomerStackParamList> =
+  RouteProp<CustomerStackParamList, T>;
