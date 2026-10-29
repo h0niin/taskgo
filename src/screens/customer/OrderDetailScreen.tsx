@@ -15,6 +15,7 @@ import {
 } from '../../components';
 import { Canvas, Card, CTA, Neutral } from '../../theme';
 import { useStore } from '../../store';
+import { skipSimulationAhead } from '../../sim';
 import { formatOrderId, formatPhone, formatRupees } from '../../utils/format';
 import {
   ArrowLeft,
@@ -196,6 +197,37 @@ export function OrderDetailScreen({ route, navigation }: any) {
         {/* Live Tracking Map (if assigned or in progress) */}
         {['ASSIGNED', 'IN_PROGRESS', 'PROOF_SUBMITTED'].includes(order.status) && (
           <View style={{ gap: 12 }}>
+            {/* Simulator Fast-Forward Debug Button (SPEC Section 12) */}
+            {order.assignedRunnerId === 'u_run_2' && order.status !== 'PROOF_SUBMITTED' && (
+              <View
+                style={{
+                  backgroundColor: '#FEF08A',
+                  borderWidth: 3,
+                  borderColor: Neutral.black,
+                  borderRadius: 14,
+                  padding: 12,
+                  flexDirection: 'row',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                }}
+              >
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontWeight: '900', fontSize: 12, textTransform: 'uppercase' }}>
+                    ⚡ Sim: {order.assignedRunnerName}
+                  </Text>
+                  <Text style={{ fontWeight: '700', fontSize: 11, color: '#4B5563' }}>
+                    Auto-progresses every ~9s
+                  </Text>
+                </View>
+                <BrutalButton
+                  label="Skip Ahead ⏩"
+                  color={CTA.lime}
+                  size="sm"
+                  onPress={() => skipSimulationAhead(order.id)}
+                />
+              </View>
+            )}
+
             <StaticMapCard
               pickupAddress={pickup}
               dropoffAddress={dropoff}

@@ -5,8 +5,12 @@ import { CustomerNavigator } from './CustomerNavigator';
 import { RunnerNavigator } from './RunnerNavigator';
 import { AppHeader } from '../components';
 import { useStore } from '../store';
+import { useSimulator } from '../sim';
 
 export function RootNavigator() {
+  // Activate background demo simulator
+  useSimulator();
+
   const currentUser = useStore((s) => s.currentUser);
   const adminMode = useStore((s) => s.adminMode);
 

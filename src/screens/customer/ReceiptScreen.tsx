@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import {
   Image,
+  Modal,
+  Pressable,
   ScrollView,
   Text,
   TextInput,
@@ -20,7 +22,7 @@ import {
   formatOrderId,
   formatRupees,
 } from '../../utils/format';
-import { ArrowLeft, CheckCircle2, Star, Share2 } from 'lucide-react-native';
+import { ArrowLeft, CheckCircle2, Star, Share2, ZoomIn, X } from 'lucide-react-native';
 
 export function ReceiptScreen({ route, navigation }: any) {
   const { orderId } = route.params;
@@ -33,6 +35,7 @@ export function ReceiptScreen({ route, navigation }: any) {
   const [rating, setRating] = useState<number>(order?.rating ?? 5);
   const [review, setReview] = useState<string>(order?.review ?? '');
   const [rated, setRated] = useState<boolean>(!!order?.rating);
+  const [billModalVisible, setBillModalVisible] = useState(false);
 
   if (!order) {
     return (
@@ -80,178 +83,252 @@ export function ReceiptScreen({ route, navigation }: any) {
       </View>
 
       <ScrollView contentContainerStyle={{ padding: 16, gap: 16 }}>
-        {/* Paper Invoice Card */}
-        <View
-          style={{
-            backgroundColor: Card.cream,
-            borderWidth: 4,
-            borderColor: Neutral.black,
-            borderRadius: 8,
-            padding: 20,
-            gap: 14,
-            shadowColor: Neutral.black,
-            shadowOffset: { width: 5, height: 5 },
-            shadowOpacity: 1,
-            shadowRadius: 0,
-            elevation: 4,
-          }}
-        >
-          {/* Jagged Stamp / Header */}
-          <View style={{ alignItems: 'center', borderBottomWidth: 3, borderBottomColor: Neutral.black, paddingBottom: 14, gap: 4 }}>
-            <View
-              style={{
-                backgroundColor: Neutral.black,
-                paddingHorizontal: 16,
-                paddingVertical: 6,
-                borderRadius: 4,
-                transform: [{ rotate: '-1deg' }],
-              }}
-            >
-              <Text
-                style={{
-                  fontWeight: '900',
-                  fontSize: 22,
-                  color: Neutral.white,
-                  textTransform: 'uppercase',
-                  letterSpacing: 2,
-                }}
-              >
-                TASKGO INVOICE
-              </Text>
-            </View>
-            <Text style={{ fontWeight: '800', fontSize: 12, color: '#4B5563', textTransform: 'uppercase' }}>
-              Kozhikode Hyperlocal Errand Platform
-            </Text>
-          </View>
-
-          {/* Meta Details */}
-          <View style={{ gap: 6 }}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-              <Text style={{ fontWeight: '700', fontSize: 12, color: '#6B7280' }}>Order ID:</Text>
-              <Text style={{ fontWeight: '900', fontSize: 12 }}>{formatOrderId(order.id)}</Text>
-            </View>
-
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-              <Text style={{ fontWeight: '700', fontSize: 12, color: '#6B7280' }}>Date:</Text>
-              <Text style={{ fontWeight: '900', fontSize: 12 }}>{formatDate(order.createdAt)}</Text>
-            </View>
-
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-              <Text style={{ fontWeight: '700', fontSize: 12, color: '#6B7280' }}>Category:</Text>
-              <Text style={{ fontWeight: '900', fontSize: 12 }}>{order.category}</Text>
-            </View>
-
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-              <Text style={{ fontWeight: '700', fontSize: 12, color: '#6B7280' }}>Task Boy:</Text>
-              <Text style={{ fontWeight: '900', fontSize: 12, color: '#C2410C' }}>
-                {order.assignedRunnerName ?? 'Assigned Runner'}
-              </Text>
-            </View>
-
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-              <Text style={{ fontWeight: '700', fontSize: 12, color: '#6B7280' }}>Route:</Text>
-              <Text style={{ fontWeight: '900', fontSize: 11, maxWidth: '65%', textAlign: 'right' }}>
-                {order.stops[0]?.address} → {order.stops[order.stops.length - 1]?.address}
-              </Text>
-            </View>
-          </View>
-
-          {/* Dashed Separator */}
+        {/* Paper Invoice Container with Jagged Top/Bottom Edge (SPEC Section 8.5) */}
+        <View style={{ position: 'relative' }}>
+          {/* Top Jagged Perforation Teeth */}
           <View
             style={{
-              borderStyle: 'dashed',
-              borderWidth: 1.5,
-              borderColor: Neutral.black,
-              marginVertical: 4,
+              flexDirection: 'row',
+              justifyContent: 'space-around',
+              marginBottom: -4,
+              zIndex: 2,
+              paddingHorizontal: 8,
             }}
-          />
-
-          {/* Financials Breakdown */}
-          <View style={{ gap: 8 }}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-              <Text style={{ fontWeight: '700', fontSize: 13 }}>Agreed Service Fee:</Text>
-              <Text style={{ fontWeight: '900', fontSize: 13 }}>{formatRupees(agreedFee)}</Text>
-            </View>
-
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-              <View>
-                <Text style={{ fontWeight: '700', fontSize: 13 }}>Advance Paid:</Text>
-                {advancePayment?.paidAt && (
-                  <Text style={{ fontWeight: '700', fontSize: 10, color: '#6B7280' }}>
-                    {formatDateTime(advancePayment.paidAt)}
-                  </Text>
-                )}
-              </View>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <BrutalBadge label={advancePayment?.method ?? 'UPI'} color="#8B5CF6" />
-                <Text style={{ fontWeight: '900', fontSize: 13 }}>
-                  {formatRupees(order.advanceAmount ?? advancePayment?.amount ?? 0)}
-                </Text>
-              </View>
-            </View>
-
-            {storeBill > 0 && (
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                <View>
-                  <Text style={{ fontWeight: '700', fontSize: 13 }}>Store Bill Reimbursed:</Text>
-                  <Text style={{ fontWeight: '700', fontSize: 10, color: '#D97706' }}>
-                    Receipt Attached
-                  </Text>
-                </View>
-                <Text style={{ fontWeight: '900', fontSize: 13, color: '#D97706' }}>
-                  +{formatRupees(storeBill)}
-                </Text>
-              </View>
-            )}
-
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-              <View>
-                <Text style={{ fontWeight: '700', fontSize: 13 }}>Final Balance Paid:</Text>
-                {finalPayment?.paidAt && (
-                  <Text style={{ fontWeight: '700', fontSize: 10, color: '#6B7280' }}>
-                    {formatDateTime(finalPayment.paidAt)}
-                  </Text>
-                )}
-              </View>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <BrutalBadge label={finalPayment?.method ?? 'CASH'} color="#10B981" />
-                <Text style={{ fontWeight: '900', fontSize: 13 }}>
-                  {formatRupees(order.finalBalance ?? finalPayment?.amount ?? 0)}
-                </Text>
-              </View>
-            </View>
-          </View>
-
-          {/* Double Solid Line for Total */}
-          <View style={{ borderTopWidth: 3, borderBottomWidth: 1, borderColor: Neutral.black, paddingVertical: 8, marginTop: 4 }}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Text style={{ fontWeight: '900', fontSize: 18, textTransform: 'uppercase' }}>
-                Total Paid:
-              </Text>
-              <Text style={{ fontWeight: '900', fontSize: 26, color: Neutral.black }}>
-                {formatRupees(totalPaid)}
-              </Text>
-            </View>
-          </View>
-
-          {/* Store Bill Thumbnail if present */}
-          {order.billPhotoUri ? (
-            <View style={{ marginTop: 4, gap: 6 }}>
-              <Text style={{ fontWeight: '800', fontSize: 11, textTransform: 'uppercase' }}>
-                Attached Store Bill Receipt Photo:
-              </Text>
-              <Image
-                source={{ uri: order.billPhotoUri }}
+          >
+            {[...Array(14)].map((_, i) => (
+              <View
+                key={i}
                 style={{
-                  width: 90,
-                  height: 90,
-                  borderRadius: 8,
-                  borderWidth: 2,
+                  width: 14,
+                  height: 10,
+                  backgroundColor: Canvas.purple,
+                  transform: [{ rotate: '45deg' }],
+                  borderBottomWidth: 3,
+                  borderRightWidth: 3,
                   borderColor: Neutral.black,
                 }}
               />
+            ))}
+          </View>
+
+          {/* Paper Invoice Card */}
+          <View
+            style={{
+              backgroundColor: Card.cream,
+              borderWidth: 4,
+              borderColor: Neutral.black,
+              borderRadius: 4,
+              padding: 20,
+              gap: 14,
+              shadowColor: Neutral.black,
+              shadowOffset: { width: 5, height: 5 },
+              shadowOpacity: 1,
+              shadowRadius: 0,
+              elevation: 4,
+            }}
+          >
+            {/* Jagged Stamp / Header */}
+            <View style={{ alignItems: 'center', borderBottomWidth: 3, borderBottomColor: Neutral.black, paddingBottom: 14, gap: 4 }}>
+              <View
+                style={{
+                  backgroundColor: Neutral.black,
+                  paddingHorizontal: 16,
+                  paddingVertical: 6,
+                  borderRadius: 4,
+                  transform: [{ rotate: '-1deg' }],
+                }}
+              >
+                <Text
+                  style={{
+                    fontWeight: '900',
+                    fontSize: 22,
+                    color: Neutral.white,
+                    textTransform: 'uppercase',
+                    letterSpacing: 2,
+                  }}
+                >
+                  TASKGO INVOICE
+                </Text>
+              </View>
+              <Text style={{ fontWeight: '800', fontSize: 12, color: '#4B5563', textTransform: 'uppercase' }}>
+                Kozhikode Hyperlocal Errand Platform
+              </Text>
             </View>
-          ) : null}
+
+            {/* Meta Details */}
+            <View style={{ gap: 6 }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                <Text style={{ fontWeight: '700', fontSize: 12, color: '#6B7280' }}>Order ID:</Text>
+                <Text style={{ fontWeight: '900', fontSize: 12 }}>{formatOrderId(order.id)}</Text>
+              </View>
+
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                <Text style={{ fontWeight: '700', fontSize: 12, color: '#6B7280' }}>Date:</Text>
+                <Text style={{ fontWeight: '900', fontSize: 12 }}>{formatDate(order.createdAt)}</Text>
+              </View>
+
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                <Text style={{ fontWeight: '700', fontSize: 12, color: '#6B7280' }}>Category:</Text>
+                <Text style={{ fontWeight: '900', fontSize: 12 }}>{order.category}</Text>
+              </View>
+
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                <Text style={{ fontWeight: '700', fontSize: 12, color: '#6B7280' }}>Task Boy:</Text>
+                <Text style={{ fontWeight: '900', fontSize: 12, color: '#C2410C' }}>
+                  {order.assignedRunnerName ?? 'Assigned Runner'}
+                </Text>
+              </View>
+
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                <Text style={{ fontWeight: '700', fontSize: 12, color: '#6B7280' }}>Route:</Text>
+                <Text style={{ fontWeight: '900', fontSize: 11, maxWidth: '65%', textAlign: 'right' }}>
+                  {order.stops[0]?.address} → {order.stops[order.stops.length - 1]?.address}
+                </Text>
+              </View>
+            </View>
+
+            {/* Dashed Separator */}
+            <View
+              style={{
+                borderStyle: 'dashed',
+                borderWidth: 1.5,
+                borderColor: Neutral.black,
+                marginVertical: 4,
+              }}
+            />
+
+            {/* Financials Breakdown */}
+            <View style={{ gap: 8 }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                <Text style={{ fontWeight: '700', fontSize: 13 }}>Agreed Service Fee:</Text>
+                <Text style={{ fontWeight: '900', fontSize: 13 }}>{formatRupees(agreedFee)}</Text>
+              </View>
+
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                <View>
+                  <Text style={{ fontWeight: '700', fontSize: 13 }}>Advance Paid:</Text>
+                  {advancePayment?.paidAt && (
+                    <Text style={{ fontWeight: '700', fontSize: 10, color: '#6B7280' }}>
+                      {formatDateTime(advancePayment.paidAt)}
+                    </Text>
+                  )}
+                </View>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <BrutalBadge label={advancePayment?.method ?? 'UPI'} color="#8B5CF6" />
+                  <Text style={{ fontWeight: '900', fontSize: 13 }}>
+                    {formatRupees(order.advanceAmount ?? advancePayment?.amount ?? 0)}
+                  </Text>
+                </View>
+              </View>
+
+              {storeBill > 0 && (
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <View>
+                    <Text style={{ fontWeight: '700', fontSize: 13 }}>Store Bill Reimbursed:</Text>
+                    <Text style={{ fontWeight: '700', fontSize: 10, color: '#D97706' }}>
+                      Tap thumbnail to inspect
+                    </Text>
+                  </View>
+                  <Text style={{ fontWeight: '900', fontSize: 13, color: '#D97706' }}>
+                    +{formatRupees(storeBill)}
+                  </Text>
+                </View>
+              )}
+
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                <View>
+                  <Text style={{ fontWeight: '700', fontSize: 13 }}>Final Balance Paid:</Text>
+                  {finalPayment?.paidAt && (
+                    <Text style={{ fontWeight: '700', fontSize: 10, color: '#6B7280' }}>
+                      {formatDateTime(finalPayment.paidAt)}
+                    </Text>
+                  )}
+                </View>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <BrutalBadge label={finalPayment?.method ?? 'CASH'} color="#10B981" />
+                  <Text style={{ fontWeight: '900', fontSize: 13 }}>
+                    {formatRupees(order.finalBalance ?? finalPayment?.amount ?? 0)}
+                  </Text>
+                </View>
+              </View>
+            </View>
+
+            {/* Double Solid Line for Total */}
+            <View style={{ borderTopWidth: 3, borderBottomWidth: 1, borderColor: Neutral.black, paddingVertical: 8, marginTop: 4 }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Text style={{ fontWeight: '900', fontSize: 18, textTransform: 'uppercase' }}>
+                  Total Paid:
+                </Text>
+                <Text style={{ fontWeight: '900', fontSize: 26, color: Neutral.black }}>
+                  {formatRupees(totalPaid)}
+                </Text>
+              </View>
+            </View>
+
+            {/* Store Bill Thumbnail with modal trigger (SPEC Section 8.5) */}
+            {order.billPhotoUri ? (
+              <View style={{ marginTop: 4, gap: 6 }}>
+                <Text style={{ fontWeight: '800', fontSize: 11, textTransform: 'uppercase' }}>
+                  Attached Store Bill Receipt (Tap to Zoom):
+                </Text>
+                <TouchableOpacity
+                  onPress={() => setBillModalVisible(true)}
+                  style={{ alignSelf: 'flex-start' }}
+                >
+                  <View style={{ position: 'relative' }}>
+                    <Image
+                      source={{ uri: order.billPhotoUri }}
+                      style={{
+                        width: 90,
+                        height: 90,
+                        borderRadius: 8,
+                        borderWidth: 2,
+                        borderColor: Neutral.black,
+                      }}
+                    />
+                    <View
+                      style={{
+                        position: 'absolute',
+                        right: 4,
+                        bottom: 4,
+                        backgroundColor: Neutral.black,
+                        padding: 3,
+                        borderRadius: 4,
+                      }}
+                    >
+                      <ZoomIn size={12} color={Neutral.white} />
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              </View>
+            ) : null}
+          </View>
+
+          {/* Bottom Jagged Perforation Teeth */}
+          <View
+            style={{
+              flexDirection: 'row',
+              justifyContent: 'space-around',
+              marginTop: -4,
+              zIndex: 2,
+              paddingHorizontal: 8,
+            }}
+          >
+            {[...Array(14)].map((_, i) => (
+              <View
+                key={i}
+                style={{
+                  width: 14,
+                  height: 10,
+                  backgroundColor: Canvas.purple,
+                  transform: [{ rotate: '45deg' }],
+                  borderTopWidth: 3,
+                  borderLeftWidth: 3,
+                  borderColor: Neutral.black,
+                }}
+              />
+            ))}
+          </View>
         </View>
 
         {/* Chunky 5-Star Rating Selector */}
@@ -324,6 +401,72 @@ export function ReceiptScreen({ route, navigation }: any) {
           style={{ marginBottom: 20 }}
         />
       </ScrollView>
+
+      {/* Bill Photo Full-Screen Modal */}
+      {order.billPhotoUri ? (
+        <Modal
+          visible={billModalVisible}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setBillModalVisible(false)}
+        >
+          <Pressable
+            onPress={() => setBillModalVisible(false)}
+            style={{
+              flex: 1,
+              backgroundColor: 'rgba(0,0,0,0.85)',
+              justifyContent: 'center',
+              alignItems: 'center',
+              padding: 20,
+            }}
+          >
+            <View
+              style={{
+                width: '100%',
+                maxHeight: '80%',
+                backgroundColor: Card.cream,
+                borderRadius: 16,
+                borderWidth: 4,
+                borderColor: Neutral.black,
+                padding: 16,
+                gap: 12,
+              }}
+            >
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Text style={{ fontWeight: '900', fontSize: 16, textTransform: 'uppercase' }}>
+                  Original Store Receipt
+                </Text>
+                <TouchableOpacity
+                  onPress={() => setBillModalVisible(false)}
+                  style={{
+                    backgroundColor: Neutral.black,
+                    padding: 6,
+                    borderRadius: 999,
+                  }}
+                >
+                  <X size={16} color={Neutral.white} />
+                </TouchableOpacity>
+              </View>
+
+              <Image
+                source={{ uri: order.billPhotoUri }}
+                style={{
+                  width: '100%',
+                  height: 320,
+                  borderRadius: 10,
+                  borderWidth: 2,
+                  borderColor: Neutral.black,
+                }}
+                resizeMode="contain"
+              />
+
+              <Text style={{ fontWeight: '700', fontSize: 13, textAlign: 'center', color: '#374151' }}>
+                Reimbursed Amount: {formatRupees(order.storeBillAmount ?? 0)}
+              </Text>
+            </View>
+          </Pressable>
+        </Modal>
+      ) : null}
     </View>
   );
 }

@@ -1,14 +1,17 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { RunnerFeedScreen } from '../screens/runner/RunnerFeedScreen';
 import { MyErrandsScreen } from '../screens/runner/MyErrandsScreen';
-import { RunnerTabParamList } from './types';
+import { RunnerNegotiationScreen } from '../screens/runner/RunnerNegotiationScreen';
+import { RunnerStackParamList, RunnerTabParamList } from './types';
 import { Compass, ClipboardList } from 'lucide-react-native';
 import { Card, Neutral } from '../theme';
 
 const Tab = createBottomTabNavigator<RunnerTabParamList>();
+const Stack = createNativeStackNavigator<RunnerStackParamList>();
 
-export function RunnerNavigator() {
+function RunnerTabs() {
   return (
     <Tab.Navigator
       screenOptions={{
@@ -55,3 +58,11 @@ export function RunnerNavigator() {
   );
 }
 
+export function RunnerNavigator() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="RunnerTabs" component={RunnerTabs} />
+      <Stack.Screen name="RunnerNegotiation" component={RunnerNegotiationScreen} />
+    </Stack.Navigator>
+  );
+}

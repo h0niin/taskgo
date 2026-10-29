@@ -12,6 +12,7 @@ import {
   BrutalButton,
   BrutalCard,
   BrutalInput,
+  OfferCountdown,
 } from '../../components';
 import { Canvas, Card, CTA, Neutral } from '../../theme';
 import { counterCount, useStore } from '../../store';
@@ -25,6 +26,7 @@ export function NegotiationThreadScreen({ route, navigation }: any) {
   const acceptBid = useStore((s) => s.acceptBid);
   const customerCounter = useStore((s) => s.customerCounter);
   const customerRejectOffer = useStore((s) => s.customerRejectOffer);
+  const expireOffer = useStore((s) => s.expireOffer);
 
   const order = orders.find((o) => o.id === orderId);
   const thread = order?.threads.find((t) => t.id === threadId);
@@ -218,18 +220,24 @@ export function NegotiationThreadScreen({ route, navigation }: any) {
                       "{offer.note}"
                     </Text>
 
-                    {/* Timestamp */}
-                    <Text
-                      style={{
-                        fontWeight: '700',
-                        fontSize: 10,
-                        color: '#9CA3AF',
-                        alignSelf: 'flex-end',
-                        marginTop: 2,
-                      }}
-                    >
-                      {formatDateTime(offer.createdAt)}
-                    </Text>
+                    {/* Timestamp & Expiry Countdown */}
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 }}>
+                      {offer.status === 'PENDING' ? (
+                        <OfferCountdown
+                          createdAtIso={offer.createdAt}
+                          onExpire={() => expireOffer(order.id, thread.id, offer.id)}
+                        />
+                      ) : <View />}
+                      <Text
+                        style={{
+                          fontWeight: '700',
+                          fontSize: 10,
+                          color: '#9CA3AF',
+                        }}
+                      >
+                        {formatDateTime(offer.createdAt)}
+                      </Text>
+                    </View>
                   </View>
                 </BrutalCard>
               </View>

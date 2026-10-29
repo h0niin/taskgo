@@ -38,6 +38,13 @@ export type RunnerTabParamList = {
   MyErrands: undefined;
 };
 
+// ─── Runner stack navigator (Step 5 drill-downs) ─────────────────────────────
+
+export type RunnerStackParamList = {
+  RunnerTabs: undefined;
+  RunnerNegotiation: { orderId: string; threadId: string };
+};
+
 // ─── Navigation prop helpers ──────────────────────────────────────────────────
 
 export type RootNavProp = NativeStackNavigationProp<RootStackParamList>;

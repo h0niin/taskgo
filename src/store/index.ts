@@ -101,6 +101,13 @@ interface AppState {
     note: string,
   ) => BidThread;
 
+  editBid: (
+    orderId: string,
+    threadId: string,
+    price: number,
+    note: string,
+  ) => void;
+
   withdrawBid: (orderId: string, threadId: string) => void;
 
   runnerCounter: (
@@ -340,6 +347,33 @@ export const useStore = create<AppState>((set, get) => ({
     }));
 
     return newThread;
+  },
+
+  // ── Edit bid (SPEC Section 5.6: before customer response) ─────────────────
+  editBid(orderId, threadId, price, note) {
+    set((s) => ({
+      orders: s.orders.map((o) => {
+        if (o.id !== orderId) return o;
+        return {
+          ...o,
+          threads: o.threads.map((t) => {
+            if (t.id !== threadId) return t;
+            // Can only edit before customer has responded
+            const hasCustomerResponse = t.offers.some((of) => of.from === 'CUSTOMER');
+            if (hasCustomerResponse || t.offers.length === 0) return t;
+
+            return {
+              ...t,
+              offers: t.offers.map((of, i) =>
+                i === t.offers.length - 1
+                  ? { ...of, price, note, createdAt: iso() }
+                  : of,
+              ),
+            };
+          }),
+        };
+      }),
+    }));
   },
 
   // ── Withdraw bid ───────────────────────────────────────────────────────────
