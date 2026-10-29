@@ -37,6 +37,8 @@ export function AppHeader() {
   const currentUser     = useStore((s) => s.currentUser);
   const adminMode       = useStore((s) => s.adminMode);
   const setAdminMode    = useStore((s) => s.setAdminMode);
+  const simulatorEnabled = useStore((s) => s.simulatorEnabled);
+  const toggleSimulator  = useStore((s) => s.toggleSimulator);
   const logout          = useStore((s) => s.logout);
 
   if (!currentUser) return null;
@@ -106,16 +108,54 @@ export function AppHeader() {
         </Pressable>
       </View>
 
-      {/* ── Row 2: Admin mode toggle (ADMIN only) ────────────────────── */}
+      {/* ── Row 2: Admin mode toggle + Simulator Switch (ADMIN only) ──── */}
       {isAdmin && (
-        <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
-          <Text style={{ fontWeight: '700', fontSize: 11, color: '#9CA3AF', textTransform: 'uppercase' }}>
-            Acting as:
-          </Text>
-          <AdminToggle
-            value={adminMode}
-            onChange={setAdminMode}
-          />
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+          <View style={{ flexDirection: 'row', gap: 6, alignItems: 'center' }}>
+            <Text style={{ fontWeight: '700', fontSize: 10, color: '#9CA3AF', textTransform: 'uppercase' }}>
+              Mode:
+            </Text>
+            <AdminToggle
+              value={adminMode}
+              onChange={setAdminMode}
+            />
+          </View>
+
+          {/* Admin-only Simulator ON/OFF switch (SPEC Section 12) */}
+          <Pressable
+            onPress={toggleSimulator}
+            style={({ pressed }) => ({
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 4,
+              backgroundColor: simulatorEnabled ? '#065F46' : '#7F1D1D',
+              borderWidth: 2,
+              borderColor: simulatorEnabled ? '#34D399' : '#F87171',
+              borderRadius: 9999,
+              paddingHorizontal: 8,
+              paddingVertical: 4,
+              opacity: pressed ? 0.7 : 1,
+            })}
+          >
+            <View
+              style={{
+                width: 6,
+                height: 6,
+                borderRadius: 3,
+                backgroundColor: simulatorEnabled ? '#34D399' : '#F87171',
+              }}
+            />
+            <Text
+              style={{
+                fontWeight: '900',
+                fontSize: 10,
+                color: Neutral.white,
+                textTransform: 'uppercase',
+              }}
+            >
+              SIM: {simulatorEnabled ? 'ON' : 'OFF'}
+            </Text>
+          </Pressable>
         </View>
       )}
     </View>

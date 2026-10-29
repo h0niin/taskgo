@@ -203,15 +203,12 @@ export const useStore = create<AppState>((set, get) => ({
     return newOrder;
   },
 
-  // ── Cancel order ───────────────────────────────────────────────────────────
+  // ── Cancel order (SPEC Section 4: pre-assigned free, post-assigned forfeited)
   cancelOrder(orderId) {
     set((s) => ({
       orders: s.orders.map((o) => {
         if (o.id !== orderId) return o;
-        const preCancelStates: OrderStatus[] = [
-          'PLACED', 'BIDDING', 'AGREED', 'AWAITING_DEPOSIT',
-        ];
-        if (!preCancelStates.includes(o.status)) return o; // guard
+        if (['COMPLETED', 'CANCELLED'].includes(o.status)) return o;
         return { ...o, status: 'CANCELLED' };
       }),
     }));

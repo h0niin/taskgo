@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { ScrollView, Switch, Text, TouchableOpacity, View } from 'react-native';
+import { RefreshControl, ScrollView, Switch, Text, TouchableOpacity, View } from 'react-native';
 import {
   BrutalBadge,
   BrutalButton,
   BrutalCard,
+  BrutalCardSkeleton,
   RunnerBidSheet,
 } from '../../components';
 import { Canvas, Card, CTA, Neutral } from '../../theme';
@@ -14,8 +15,14 @@ import { Bike, Navigation, MapPin } from 'lucide-react-native';
 
 export function RunnerFeedScreen({ navigation }: any) {
   const [online, setOnline] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<ErrandOrder | null>(null);
   const [bidSheetVisible, setBidSheetVisible] = useState(false);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    setTimeout(() => setRefreshing(false), 800);
+  };
 
   const currentUser = useStore((s) => s.currentUser);
   const adminMode = useStore((s) => s.adminMode);
@@ -51,6 +58,9 @@ export function RunnerFeedScreen({ navigation }: any) {
       <ScrollView
         contentContainerStyle={{ padding: 16, gap: 16 }}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Neutral.white} />
+        }
       >
         {/* Online / Offline Status Toggle Banner (SPEC Section 9.1) */}
         <View
@@ -116,7 +126,12 @@ export function RunnerFeedScreen({ navigation }: any) {
           <BrutalBadge label="Kozhikode City" color={Neutral.black} />
         </View>
 
-        {!online ? (
+        {refreshing ? (
+          <View style={{ gap: 12 }}>
+            <BrutalCardSkeleton />
+            <BrutalCardSkeleton />
+          </View>
+        ) : !online ? (
           <BrutalCard backgroundColor={Card.cream}>
             <View style={{ padding: 28, alignItems: 'center', gap: 8 }}>
               <Text style={{ fontWeight: '900', fontSize: 18, textTransform: 'uppercase' }}>

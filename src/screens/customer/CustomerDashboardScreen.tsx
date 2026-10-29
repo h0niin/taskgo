@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
+  RefreshControl,
   ScrollView,
   Text,
   TouchableOpacity,
@@ -9,6 +10,7 @@ import {
   BrutalBadge,
   BrutalButton,
   BrutalCard,
+  BrutalCardSkeleton,
   STATUS_BADGE_COLORS,
 } from '../../components';
 import { Canvas, Card, CTA, Neutral } from '../../theme';
@@ -21,12 +23,18 @@ import { formatOrderId, formatRupees } from '../../utils/format';
 import { Bike, Navigation, ArrowRight, Clock, Plus } from 'lucide-react-native';
 
 export function CustomerDashboardScreen({ navigation }: any) {
+  const [refreshing, setRefreshing] = useState(false);
   const currentUser = useStore((s) => s.currentUser);
   const adminMode = useStore((s) => s.adminMode);
   const orders = useStore((s) => s.orders);
 
   const customerId = effectiveCustomerId(currentUser, adminMode);
   const myOrders = selectCustomerOrders(orders, customerId);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    setTimeout(() => setRefreshing(false), 800);
+  };
 
   // Active order for the hard-shadow tracking card (Section 8)
   const activeOrder = myOrders.find((o) =>
@@ -37,6 +45,9 @@ export function CustomerDashboardScreen({ navigation }: any) {
     <ScrollView
       style={{ flex: 1, backgroundColor: Canvas.purple }}
       contentContainerStyle={{ padding: 16, gap: 16 }}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Neutral.white} />
+      }
     >
       {/* ── Active Order Hard-Shadow Tracking Card (SPEC Section 8.1) ────────── */}
       {activeOrder ? (
@@ -223,7 +234,12 @@ export function CustomerDashboardScreen({ navigation }: any) {
         Your Orders Bento
       </Text>
 
-      {myOrders.length === 0 ? (
+      {refreshing ? (
+        <View style={{ gap: 12 }}>
+          <BrutalCardSkeleton />
+          <BrutalCardSkeleton />
+        </View>
+      ) : myOrders.length === 0 ? (
         <BrutalCard backgroundColor={Card.cream}>
           <View style={{ padding: 28, alignItems: 'center', gap: 8 }}>
             <Clock size={32} color="#6B7280" />

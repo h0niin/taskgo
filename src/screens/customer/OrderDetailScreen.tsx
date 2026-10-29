@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Linking,
+  Modal,
+  Pressable,
   ScrollView,
   Text,
   TouchableOpacity,
@@ -27,6 +29,7 @@ import {
   Phone,
   ShieldCheck,
   AlertCircle,
+  AlertTriangle,
 } from 'lucide-react-native';
 
 export function OrderDetailScreen({ route, navigation }: any) {
@@ -36,6 +39,7 @@ export function OrderDetailScreen({ route, navigation }: any) {
   const cancelOrder = useStore((s) => s.cancelOrder);
 
   const order = orders.find((o) => o.id === orderId);
+  const [cancelModalVisible, setCancelModalVisible] = useState(false);
 
   if (!order) {
     return (
@@ -49,7 +53,9 @@ export function OrderDetailScreen({ route, navigation }: any) {
   const pickup = order.stops[0]?.address ?? 'Pickup';
   const dropoff = order.stops[order.stops.length - 1]?.address ?? 'Dropoff';
 
-  const canCancel = ['PLACED', 'BIDDING', 'AGREED', 'AWAITING_DEPOSIT'].includes(order.status);
+  const isPreAssigned = ['PLACED', 'BIDDING', 'AGREED', 'AWAITING_DEPOSIT'].includes(order.status);
+  const isPostAssigned = ['ASSIGNED', 'IN_PROGRESS'].includes(order.status);
+  const canCancel = isPreAssigned || isPostAssigned;
 
   const handleCallRunner = () => {
     Linking.openURL('tel:+919876543210');
@@ -443,21 +449,102 @@ export function OrderDetailScreen({ route, navigation }: any) {
           </View>
         </BrutalCard>
 
-        {/* Cancel Order (Allowed pre-assigned with no charge) */}
+        {/* Cancel Order (SPEC Section 4: Pre-assigned free, Post-assigned forfeited confirm dialog) */}
         {canCancel && (
           <BrutalButton
-            label="Cancel Errand"
+            label={isPreAssigned ? 'Cancel Errand (No Charge)' : 'Cancel Errand (Advance Forfeited)'}
             color="#EF4444"
             fullWidth
             size="sm"
             onPress={() => {
-              cancelOrder(order.id);
-              navigation.goBack();
+              if (isPreAssigned) {
+                cancelOrder(order.id);
+                navigation.goBack();
+              } else {
+                setCancelModalVisible(true);
+              }
             }}
             style={{ marginBottom: 20 }}
           />
         )}
       </ScrollView>
+
+      {/* Post-Assigned Cancel Confirmation Dialog */}
+      <Modal
+        visible={cancelModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setCancelModalVisible(false)}
+      >
+        <Pressable
+          onPress={() => setCancelModalVisible(false)}
+          style={{
+            flex: 1,
+            backgroundColor: 'rgba(0,0,0,0.7)',
+            justifyContent: 'center',
+            padding: 20,
+          }}
+        >
+          <Pressable
+            onPress={(e) => e.stopPropagation()}
+            style={{
+              backgroundColor: Card.cream,
+              borderWidth: 4,
+              borderColor: Neutral.black,
+              borderRadius: 20,
+              padding: 20,
+              gap: 16,
+            }}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              <AlertTriangle size={28} color="#DC2626" strokeWidth={3} />
+              <Text style={{ fontWeight: '900', fontSize: 18, textTransform: 'uppercase', flex: 1 }}>
+                Cancel Errand?
+              </Text>
+            </View>
+
+            <View
+              style={{
+                backgroundColor: '#FEE2E2',
+                borderWidth: 2,
+                borderColor: '#DC2626',
+                borderRadius: 12,
+                padding: 12,
+                gap: 6,
+              }}
+            >
+              <Text style={{ fontWeight: '900', fontSize: 13, color: '#DC2626', textTransform: 'uppercase' }}>
+                Advance Deposit Forfeited
+              </Text>
+              <Text style={{ fontWeight: '700', fontSize: 12, color: '#7F1D1D' }}>
+                Because {order.assignedRunnerName} has already been dispatched to Mavoor Road / Kozhikode locations, your paid advance of {formatRupees(order.advanceAmount ?? 0)} will be paid to the runner as a travel compensation.
+              </Text>
+            </View>
+
+            <View style={{ gap: 10 }}>
+              <BrutalButton
+                label="Confirm Cancel (Forfeit Advance)"
+                color="#EF4444"
+                fullWidth
+                size="md"
+                onPress={() => {
+                  cancelOrder(order.id);
+                  setCancelModalVisible(false);
+                  navigation.goBack();
+                }}
+              />
+
+              <BrutalButton
+                label="Keep Errand Active"
+                color={Neutral.white}
+                fullWidth
+                size="sm"
+                onPress={() => setCancelModalVisible(false)}
+              />
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }

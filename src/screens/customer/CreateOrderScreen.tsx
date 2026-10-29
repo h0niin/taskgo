@@ -19,6 +19,17 @@ import { ORDER_CATEGORIES } from '../../data/seed';
 import { useStore } from '../../store';
 import { Plus, Trash2, Search, MapPin } from 'lucide-react-native';
 
+const KOZHIKODE_LOCALITIES = [
+  'Mavoor Road',
+  'Palayam',
+  'Beach Road',
+  'Medical College',
+  'Nadakkavu',
+  'Mananchira',
+  'Feroke',
+  'Kallai',
+];
+
 interface StopDraft {
   id: string;
   type: 'PICKUP' | 'DROPOFF' | 'STOP';
@@ -275,6 +286,28 @@ export function CreateOrderScreen({ navigation }: any) {
                     value={stop.address}
                     onChangeText={(val) => updateStop(stop.id, 'address', val)}
                   />
+
+                  {/* Kozhikode Locality Quick Chips */}
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
+                    {KOZHIKODE_LOCALITIES.map((loc) => (
+                      <TouchableOpacity
+                        key={loc}
+                        onPress={() => updateStop(stop.id, 'address', `${loc}, Kozhikode`)}
+                        style={{
+                          backgroundColor: '#FEF08A',
+                          borderWidth: 1.5,
+                          borderColor: Neutral.black,
+                          borderRadius: 999,
+                          paddingHorizontal: 8,
+                          paddingVertical: 3,
+                        }}
+                      >
+                        <Text style={{ fontWeight: '800', fontSize: 10, color: Neutral.black }}>
+                          + {loc}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
 
                   <View style={{ flexDirection: 'row', gap: 8 }}>
                     <View style={{ flex: 1 }}>

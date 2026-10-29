@@ -19,3 +19,4 @@ export { UpiPaymentSheet } from './UpiPaymentSheet';
 export { ProofUploadSheet } from './ProofUploadSheet';
 export { RunnerBidSheet } from './RunnerBidSheet';
 export { OfferCountdown } from './OfferCountdown';
+export { BrutalSkeleton, BrutalCardSkeleton } from './BrutalSkeleton';
