@@ -142,6 +142,7 @@ export function CustomerDashboardScreen({ navigation }: any) {
               <BrutalButton
                 label="Track Errand & View Checkpoints →"
                 color={Neutral.black}
+                textColor={Neutral.white}
                 fullWidth
                 size="sm"
                 onPress={() => navigation.navigate('OrderDetail', { orderId: activeOrder.id })}

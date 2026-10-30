@@ -23,6 +23,7 @@
 import React from 'react';
 import {
   Keyboard,
+  KeyboardAvoidingView,
   Modal,
   Pressable,
   ScrollView,
@@ -166,16 +167,19 @@ export function BottomSheet({
                 </View>
               )}
 
-              {/* Body — scrollable when snapHeight is set */}
+              {/* Body — scrollable when snapHeight is set; lifts above the keyboard */}
               {snapHeight ? (
-                <ScrollView
-                  showsVerticalScrollIndicator={false}
-                  keyboardShouldPersistTaps="handled"
-                >
-                  {children}
-                </ScrollView>
+                <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
+                  <ScrollView
+                    showsVerticalScrollIndicator={false}
+                    keyboardShouldPersistTaps="handled"
+                    contentContainerStyle={{ flexGrow: 1 }}
+                  >
+                    {children}
+                  </ScrollView>
+                </KeyboardAvoidingView>
               ) : (
-                <>{children}</>
+                <KeyboardAvoidingView behavior="padding">{children}</KeyboardAvoidingView>
               )}
             </View>
           </TouchableWithoutFeedback>

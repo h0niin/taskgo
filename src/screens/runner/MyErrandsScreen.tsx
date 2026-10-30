@@ -350,6 +350,7 @@ export function MyErrandsScreen({ navigation }: any) {
                           <BrutalButton
                             label="CONFIRM CASH RECEIVED"
                             color={Neutral.black}
+                            textColor={Neutral.white}
                             fullWidth
                             size="md"
                             onPress={() => confirmCashReceived(order.id)}

@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import {
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   Text,
@@ -146,11 +148,14 @@ export function CreateOrderScreen({ navigation }: any) {
   );
 
   return (
-    <ScrollView
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
       style={{ flex: 1, backgroundColor: Canvas.purple }}
-      contentContainerStyle={{ padding: 16, gap: 16 }}
-      keyboardShouldPersistTaps="handled"
     >
+      <ScrollView
+        contentContainerStyle={{ padding: 16, gap: 16 }}
+        keyboardShouldPersistTaps="handled"
+      >
       {/* Top Banner */}
       <View
         style={{
@@ -505,6 +510,7 @@ export function CreateOrderScreen({ navigation }: any) {
           </Pressable>
         </Pressable>
       </Modal>
-    </ScrollView>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }

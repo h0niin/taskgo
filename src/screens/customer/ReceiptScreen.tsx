@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import {
   Image,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   Text,
@@ -59,7 +61,10 @@ export function ReceiptScreen({ route, navigation }: any) {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: Canvas.purple }}>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
+      style={{ flex: 1, backgroundColor: Canvas.purple }}
+    >
       {/* Top Bar */}
       <View
         style={{
@@ -71,7 +76,7 @@ export function ReceiptScreen({ route, navigation }: any) {
         }}
       >
         <TouchableOpacity
-          onPress={() => navigation.navigate('Dashboard')}
+          onPress={() => navigation.goBack()}
           style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}
         >
           <ArrowLeft size={18} color={Neutral.white} />
@@ -397,7 +402,7 @@ export function ReceiptScreen({ route, navigation }: any) {
           color={Neutral.white}
           fullWidth
           size="lg"
-          onPress={() => navigation.navigate('Dashboard')}
+          onPress={() => navigation.goBack()}
           style={{ marginBottom: 20 }}
         />
       </ScrollView>
@@ -467,7 +472,7 @@ export function ReceiptScreen({ route, navigation }: any) {
           </Pressable>
         </Modal>
       ) : null}
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 

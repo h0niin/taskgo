@@ -74,7 +74,7 @@ export function OrderDetailScreen({ route, navigation }: any) {
         }}
       >
         <TouchableOpacity
-          onPress={() => navigation.navigate('Dashboard')}
+          onPress={() => navigation.goBack()}
           style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}
         >
           <ArrowLeft size={18} color={Neutral.white} />
@@ -119,6 +119,7 @@ export function OrderDetailScreen({ route, navigation }: any) {
             <BrutalButton
               label={`Pay Advance (${formatRupees(order.advanceAmount ?? 0)}) →`}
               color={Neutral.black}
+              textColor={Neutral.white}
               fullWidth
               size="md"
               onPress={() => navigation.navigate('AdvancePayment', { orderId })}
@@ -193,6 +194,7 @@ export function OrderDetailScreen({ route, navigation }: any) {
               <BrutalButton
                 label="View Full Paper Receipt →"
                 color={Neutral.black}
+                textColor={Neutral.white}
                 fullWidth
                 onPress={() => navigation.navigate('Receipt', { orderId })}
               />

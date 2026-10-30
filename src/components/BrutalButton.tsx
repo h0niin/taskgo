@@ -35,6 +35,8 @@ export interface BrutalButtonProps {
   onPress: () => void;
   /** Fill color. Defaults to lime #84CC16. */
   color?: string;
+  /** Label text color. Defaults to Neutral.black. */
+  textColor?: string;
   disabled?: boolean;
   loading?: boolean;
   fullWidth?: boolean;
@@ -57,6 +59,7 @@ export function BrutalButton({
   label,
   onPress,
   color = '#84CC16',
+  textColor = Neutral.black,
   disabled = false,
   loading = false,
   fullWidth = false,
@@ -126,7 +129,7 @@ export function BrutalButton({
               style={{
                 fontWeight: '900',
                 fontSize,
-                color: Neutral.black,
+                color: textColor,
                 textTransform: 'uppercase',
                 letterSpacing: -0.5,
               }}

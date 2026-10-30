@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import {
   Image,
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   Text,
   TextInput,
@@ -54,7 +56,10 @@ export function ProofReviewScreen({ route, navigation }: any) {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: Canvas.purple }}>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
+      style={{ flex: 1, backgroundColor: Canvas.purple }}
+    >
       {/* Top Bar */}
       <View
         style={{
@@ -321,7 +326,7 @@ export function ProofReviewScreen({ route, navigation }: any) {
           </BrutalCard>
         )}
       </ScrollView>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
