@@ -4,7 +4,7 @@
 // Section 0 rule: no backend — all in-memory.
 
 import { create } from 'zustand';
-import { SEED_ORDERS, SEED_USERS } from '../data/seed';
+import { SEED_USERS } from '../data/seed';
 import type {
   AdminMode,
   BidThread,
@@ -149,7 +149,7 @@ export const useStore = create<AppState>((set, get) => ({
   adminMode: 'CUSTOMER',
   simulatorEnabled: true,
   users: SEED_USERS,
-  orders: SEED_ORDERS.map(cloneOrder),
+  orders: [],
 
   // ── Auth ───────────────────────────────────────────────────────────────────
   login(email, password) {
