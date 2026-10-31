@@ -439,7 +439,7 @@ export function OrderDetailScreen({ route, navigation }: any) {
           </View>
         </BrutalCard>
 
-        {/* Edge-Case Instructions */}
+        {/* Special Instructions */}
         <BrutalCard backgroundColor={Card.cream}>
           <View style={{ padding: 16, gap: 6 }}>
             <Text style={{ fontWeight: '900', fontSize: 13, textTransform: 'uppercase' }}>

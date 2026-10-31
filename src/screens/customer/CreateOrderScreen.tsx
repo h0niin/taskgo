@@ -65,7 +65,7 @@ export function CreateOrderScreen({ navigation }: any) {
   const [locationSuggestions, setLocationSuggestions] = useState<{[key: string]: Array<{name: string, lat: number, lng: number}>}>({});
   const [locationSearchLoading, setLocationSearchLoading] = useState<{[key: string]: boolean}>({});
 
-  // Multiline edge-case instructions
+  // Multiline special instructions
   const [instructions, setInstructions] = useState('');
   const [error, setError] = useState<string | null>(null);
 
@@ -141,7 +141,7 @@ export function CreateOrderScreen({ navigation }: any) {
 
     // Validate instructions
     if (!instructions.trim()) {
-      setError('Edge-case instructions are required (e.g. what to do if shop is closed or items unavailable).');
+      setError('Special instructions are required (e.g. what to do if shop is closed or items unavailable).');
       return;
     }
 
@@ -400,11 +400,11 @@ export function CreateOrderScreen({ navigation }: any) {
         </View>
       </BrutalCard>
 
-      {/* Edge-Case Instructions */}
+      {/* Special Instructions */}
       <BrutalCard backgroundColor={Card.cream}>
         <View style={{ padding: 18, gap: 10 }}>
           <Text style={{ fontWeight: '900', fontSize: 14, textTransform: 'uppercase' }}>
-            Edge-Case Instructions (Required)
+            Special Instructions (Required)
           </Text>
           <Text style={{ fontWeight: '700', fontSize: 12, color: '#4B5563' }}>
             What should the runner do if the shop is closed, item out of stock, or contact unreachable?
