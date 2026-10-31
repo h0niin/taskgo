@@ -19,9 +19,11 @@ const STATUSES: OrderStatus[] = [
 interface OrderStatusFilterProps {
   value: OrderStatus[];
   onChange: (statuses: OrderStatus[]) => void;
+  counts: Partial<Record<OrderStatus, number>>;
+  allCount: number;
 }
 
-export function OrderStatusFilter({ value, onChange }: OrderStatusFilterProps) {
+export function OrderStatusFilter({ value, onChange, counts, allCount }: OrderStatusFilterProps) {
   const toggleStatus = (status: OrderStatus) => {
     onChange(
       value.includes(status)
@@ -61,7 +63,9 @@ export function OrderStatusFilter({ value, onChange }: OrderStatusFilterProps) {
                 fontWeight: '900',
               }}
             >
-              {status === 'ALL' ? 'ALL STATUSES' : status.replace(/_/g, ' ')}
+              {status === 'ALL'
+                ? `ALL (${allCount})`
+                : `${status.replace(/_/g, ' ')} (${counts[status] ?? 0})`}
             </Text>
           </TouchableOpacity>
         );

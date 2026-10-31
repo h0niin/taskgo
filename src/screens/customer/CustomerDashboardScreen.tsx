@@ -33,6 +33,10 @@ export function CustomerDashboardScreen({ navigation }: any) {
 
   const customerId = effectiveCustomerId(currentUser, adminMode);
   const myOrders = selectCustomerOrders(orders, customerId);
+  const statusCounts = myOrders.reduce<Partial<Record<OrderStatus, number>>>((counts, order) => {
+    counts[order.status] = (counts[order.status] ?? 0) + 1;
+    return counts;
+  }, {});
   const filteredOrders = myOrders.filter(
     (order) => statusFilters.length === 0 || statusFilters.includes(order.status),
   );
@@ -228,7 +232,12 @@ export function CustomerDashboardScreen({ navigation }: any) {
       </View>
 
       {/* ── Bento Orders List ────────────────────────────────────────────────── */}
-      <OrderStatusFilter value={statusFilters} onChange={setStatusFilters} />
+      <OrderStatusFilter
+        value={statusFilters}
+        onChange={setStatusFilters}
+        counts={statusCounts}
+        allCount={myOrders.length}
+      />
       <Text
         style={{
           fontWeight: '900',

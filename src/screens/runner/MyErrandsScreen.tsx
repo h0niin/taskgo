@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import {
   Image,
   Linking,
-  Pressable,
   ScrollView,
   Text,
   TouchableOpacity,
@@ -38,10 +37,7 @@ import {
   Zap,
 } from 'lucide-react-native';
 
-type TabKind = 'Bidding' | 'Active' | 'Done' | 'Other';
-
 export function MyErrandsScreen({ navigation }: any) {
-  const [tab, setTab] = useState<TabKind>('Active');
   const [statusFilters, setStatusFilters] = useState<OrderStatus[]>([]);
   const [proofSheetVisible, setProofSheetVisible] = useState(false);
   const [selectedProofOrder, setSelectedProofOrder] = useState<ErrandOrder | null>(null);
@@ -77,9 +73,24 @@ export function MyErrandsScreen({ navigation }: any) {
   const filteredDoneList = doneList.filter(
     (order) => statusFilters.length === 0 || statusFilters.includes(order.status),
   );
-  const filteredRunnerOrders = runnerOrders.filter(
-    (order) => statusFilters.includes(order.status),
-  );
+  const statusCounts = runnerOrders.reduce<Partial<Record<OrderStatus, number>>>((counts, order) => {
+    counts[order.status] = (counts[order.status] ?? 0) + 1;
+    return counts;
+  }, {});
+  const showBidding = statusFilters.length
+    ? statusFilters.some((status) => ['PLACED', 'BIDDING'].includes(status))
+    : biddingList.length > 0;
+  const showActive = statusFilters.length
+    ? statusFilters.some((status) =>
+        ['ASSIGNED', 'IN_PROGRESS', 'PROOF_SUBMITTED', 'AWAITING_FINAL_PAYMENT'].includes(status),
+      )
+    : activeList.length > 0;
+  const showDone = statusFilters.length
+    ? statusFilters.includes('COMPLETED')
+    : doneList.length > 0;
+  const showOther = statusFilters.length
+    ? statusFilters.some((status) => ['AGREED', 'AWAITING_DEPOSIT', 'CANCELLED'].includes(status))
+    : otherList.length > 0;
 
   const handleAdvanceStep = (orderId: string, nextStep: ProgressStep) => {
     advanceProgress(orderId, nextStep);
@@ -114,112 +125,27 @@ export function MyErrandsScreen({ navigation }: any) {
         contentContainerStyle={{ padding: 16, gap: 16 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* Tab Switcher */}
-        {statusFilters.length === 0 && <View
-          style={{
-            flexDirection: 'row',
-            borderWidth: 4,
-            borderColor: Neutral.black,
-            borderRadius: 9999,
-            backgroundColor: Card.cream,
-            overflow: 'hidden',
-          }}
-        >
-          {(['Bidding', 'Active', 'Done', 'Other'] as TabKind[]).map((t) => {
-            const active = tab === t;
-            const count =
-              t === 'Bidding'
-                ? biddingList.length
-                : t === 'Active'
-                ? activeList.length
-                : t === 'Done'
-                ? doneList.length
-                : runnerOrders.filter((order) =>
-                    ['AGREED', 'AWAITING_DEPOSIT', 'CANCELLED'].includes(order.status),
-                  ).length;
-
-            return (
-              <Pressable
-                key={t}
-                onPress={() => setTab(t)}
-                style={{
-                  flex: 1,
-                  paddingVertical: 12,
-                  backgroundColor: active ? Neutral.black : 'transparent',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexDirection: 'row',
-                  gap: 6,
-                }}
-              >
-                <Text
-                  style={{
-                    fontWeight: '900',
-                    fontSize: 12,
-                    color: active ? Neutral.white : Neutral.black,
-                    textTransform: 'uppercase',
-                  }}
-                >
-                  {t}
-                </Text>
-                <View
-                  style={{
-                    backgroundColor: active ? CTA.lime : '#E5E7EB',
-                    borderRadius: 99,
-                    paddingHorizontal: 6,
-                    paddingVertical: 2,
-                  }}
-                >
-                  <Text style={{ fontWeight: '900', fontSize: 10, color: Neutral.black }}>
-                    {count}
-                  </Text>
-                </View>
-              </Pressable>
-            );
-          })}
-        </View>}
-
         <OrderStatusFilter
           value={statusFilters}
           onChange={setStatusFilters}
+          counts={statusCounts}
+          allCount={runnerOrders.length}
         />
 
-        {statusFilters.length > 0 && (
+        {runnerOrders.length === 0 && statusFilters.length === 0 && (
           <View style={{ gap: 12 }}>
-            {filteredRunnerOrders.length === 0 ? (
-              <BrutalCard backgroundColor={Card.cream}>
-                <View style={{ padding: 24, alignItems: 'center', gap: 6 }}>
-                  <Text style={{ fontWeight: '900', fontSize: 16, textTransform: 'uppercase' }}>
-                    No Errands With Selected Statuses
-                  </Text>
-                </View>
-              </BrutalCard>
-            ) : (
-              filteredRunnerOrders.map((order) => (
-                <BrutalCard key={order.id} backgroundColor={Card.cream}>
-                  <View style={{ padding: 16, gap: 10 }}>
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <Text style={{ fontWeight: '900', fontSize: 12, color: '#4B5563' }}>
-                        {formatDateTime(order.createdAt)}
-                      </Text>
-                      <BrutalBadge
-                        label={order.status}
-                        color={STATUS_BADGE_COLORS[order.status] ?? Neutral.black}
-                      />
-                    </View>
-                    <Text style={{ fontWeight: '900', fontSize: 15 }}>{order.category}</Text>
-                    <Text style={{ fontWeight: '800', fontSize: 14 }}>
-                      {order.stops[0]?.address} → {order.stops[order.stops.length - 1]?.address}
-                    </Text>
-                  </View>
-                </BrutalCard>
-              ))
-            )}
+            <BrutalCard backgroundColor={Card.cream}>
+              <View style={{ padding: 24, alignItems: 'center', gap: 6 }}>
+                <Text style={{ fontWeight: '900', fontSize: 16, textTransform: 'uppercase' }}>
+                  No Errands Yet
+                </Text>
+              </View>
+            </BrutalCard>
           </View>
         )}
 
-        {/* ── Tab 1: Bidding ───────────────────────────────────────────────────── */}
-        {statusFilters.length === 0 && tab === 'Bidding' && (
+        {/* ── Bidding ──────────────────────────────────────────────────────────── */}
+        {showBidding && (
           <View style={{ gap: 12 }}>
             {filteredBiddingList.length === 0 ? (
               <BrutalCard backgroundColor={Card.cream}>
@@ -307,8 +233,8 @@ export function MyErrandsScreen({ navigation }: any) {
           </View>
         )}
 
-        {/* ── Tab 2: Active (SPEC Section 7 Sequential Execution Flow) ─────────── */}
-        {statusFilters.length === 0 && tab === 'Active' && (
+        {/* ── Active (SPEC Section 7 Sequential Execution Flow) ────────────────── */}
+        {showActive && (
           <View style={{ gap: 14 }}>
             {filteredActiveList.length === 0 ? (
               <BrutalCard backgroundColor={Card.cream}>
@@ -505,8 +431,8 @@ export function MyErrandsScreen({ navigation }: any) {
           </View>
         )}
 
-        {/* ── Tab 3: Done (SPEC Section 9.3 Earnings Breakdown) ────────────────── */}
-        {statusFilters.length === 0 && tab === 'Done' && (
+        {/* ── Done (SPEC Section 9.3 Earnings Breakdown) ───────────────────────── */}
+        {showDone && (
           <View style={{ gap: 12 }}>
             {/* Runner Earnings Bento Summary */}
             <View style={{ flexDirection: 'row', gap: 10 }}>
@@ -643,7 +569,7 @@ export function MyErrandsScreen({ navigation }: any) {
             )}
           </View>
         )}
-        {statusFilters.length === 0 && tab === 'Other' && (
+        {showOther && (
           <View style={{ gap: 12 }}>
             {otherList.length === 0 ? (
               <BrutalCard backgroundColor={Card.cream}>
