@@ -45,7 +45,7 @@ export function CreateOrderScreen({ navigation }: any) {
   const createOrder = useStore((s) => s.createOrder);
 
   // Category state
-  const [category, setCategory] = useState<string>(ORDER_CATEGORIES[0]);
+  const [category, setCategory] = useState<string>('');
   const [customCategory, setCustomCategory] = useState('');
   const [categoryModalVisible, setCategoryModalVisible] = useState(false);
   const [categorySearchQuery, setCategorySearchQuery] = useState('');
@@ -55,18 +55,18 @@ export function CreateOrderScreen({ navigation }: any) {
     {
       id: '1',
       type: 'PICKUP',
-      address: 'Mavoor Road, Kozhikode',
-      landmark: 'Near Focus Mall',
-      contactName: 'Shop Manager',
-      contactPhone: '9876543210',
+      address: '',
+      landmark: '',
+      contactName: '',
+      contactPhone: '',
     },
     {
       id: '2',
       type: 'DROPOFF',
-      address: 'Beach Road, Kozhikode',
-      landmark: 'Sea View Apartment 3B',
-      contactName: 'Arjun Menon',
-      contactPhone: '9876543210',
+      address: '',
+      landmark: '',
+      contactName: '',
+      contactPhone: '',
     },
   ]);
 
