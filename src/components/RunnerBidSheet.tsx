@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import {
   Linking,
-  ScrollView,
   Text,
   TouchableOpacity,
   View,
@@ -116,7 +115,7 @@ export function RunnerBidSheet({
       title="ERRAND & BIDDING"
       snapHeight={600}
     >
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ gap: 16 }}>
+      <View style={{ gap: 16 }}>
         {error ? (
           <View
             style={{
@@ -382,8 +381,7 @@ export function RunnerBidSheet({
             />
           </View>
         )}
-      </ScrollView>
+      </View>
     </BottomSheet>
   );
 }
-
