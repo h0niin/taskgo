@@ -17,21 +17,33 @@ const STATUSES: OrderStatus[] = [
 ];
 
 interface OrderStatusFilterProps {
-  value: OrderStatus | 'ALL';
-  onChange: (status: OrderStatus | 'ALL') => void;
+  value: OrderStatus[];
+  onChange: (statuses: OrderStatus[]) => void;
 }
 
 export function OrderStatusFilter({ value, onChange }: OrderStatusFilterProps) {
+  const toggleStatus = (status: OrderStatus) => {
+    onChange(
+      value.includes(status)
+        ? value.filter((selected) => selected !== status)
+        : [...value, status],
+    );
+  };
+
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false}>
       {(['ALL', ...STATUSES] as const).map((status) => {
-        const selected = value === status;
+        const isAll = status === 'ALL';
+        const selected = isAll ? value.length === 0 : value.includes(status);
         return (
           <TouchableOpacity
             key={status}
             accessibilityRole="button"
             accessibilityState={{ selected }}
-            onPress={() => onChange(status)}
+            onPress={() => {
+              if (isAll) onChange([]);
+              else toggleStatus(status);
+            }}
             style={{
               marginRight: 8,
               borderWidth: 2,

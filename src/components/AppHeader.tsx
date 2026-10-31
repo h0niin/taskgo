@@ -34,12 +34,10 @@ const ROLE_LABELS: Record<string, string> = {
 
 export function AppHeader() {
   const insets = useSafeAreaInsets();
-  const currentUser     = useStore((s) => s.currentUser);
-  const adminMode       = useStore((s) => s.adminMode);
-  const setAdminMode    = useStore((s) => s.setAdminMode);
-  const simulatorEnabled = useStore((s) => s.simulatorEnabled);
-  const toggleSimulator  = useStore((s) => s.toggleSimulator);
-  const logout          = useStore((s) => s.logout);
+  const currentUser = useStore((s) => s.currentUser);
+  const adminMode    = useStore((s) => s.adminMode);
+  const setAdminMode = useStore((s) => s.setAdminMode);
+  const logout       = useStore((s) => s.logout);
 
   if (!currentUser) return null;
 
@@ -121,41 +119,6 @@ export function AppHeader() {
             />
           </View>
 
-          {/* Admin-only Simulator ON/OFF switch (SPEC Section 12) */}
-          <Pressable
-            onPress={toggleSimulator}
-            style={({ pressed }) => ({
-              flexDirection: 'row',
-              alignItems: 'center',
-              gap: 4,
-              backgroundColor: simulatorEnabled ? '#065F46' : '#7F1D1D',
-              borderWidth: 2,
-              borderColor: simulatorEnabled ? '#34D399' : '#F87171',
-              borderRadius: 9999,
-              paddingHorizontal: 8,
-              paddingVertical: 4,
-              opacity: pressed ? 0.7 : 1,
-            })}
-          >
-            <View
-              style={{
-                width: 6,
-                height: 6,
-                borderRadius: 3,
-                backgroundColor: simulatorEnabled ? '#34D399' : '#F87171',
-              }}
-            />
-            <Text
-              style={{
-                fontWeight: '900',
-                fontSize: 10,
-                color: Neutral.white,
-                textTransform: 'uppercase',
-              }}
-            >
-              SIM: {simulatorEnabled ? 'ON' : 'OFF'}
-            </Text>
-          </Pressable>
         </View>
       )}
     </View>

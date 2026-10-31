@@ -26,7 +26,7 @@ import { Bike, Navigation, ArrowRight, Clock, Plus } from 'lucide-react-native';
 
 export function CustomerDashboardScreen({ navigation }: any) {
   const [refreshing, setRefreshing] = useState(false);
-  const [statusFilter, setStatusFilter] = useState<OrderStatus | 'ALL'>('ALL');
+  const [statusFilters, setStatusFilters] = useState<OrderStatus[]>([]);
   const currentUser = useStore((s) => s.currentUser);
   const adminMode = useStore((s) => s.adminMode);
   const orders = useStore((s) => s.orders);
@@ -34,7 +34,7 @@ export function CustomerDashboardScreen({ navigation }: any) {
   const customerId = effectiveCustomerId(currentUser, adminMode);
   const myOrders = selectCustomerOrders(orders, customerId);
   const filteredOrders = myOrders.filter(
-    (order) => statusFilter === 'ALL' || order.status === statusFilter,
+    (order) => statusFilters.length === 0 || statusFilters.includes(order.status),
   );
 
   const onRefresh = () => {
@@ -228,7 +228,7 @@ export function CustomerDashboardScreen({ navigation }: any) {
       </View>
 
       {/* ── Bento Orders List ────────────────────────────────────────────────── */}
-      <OrderStatusFilter value={statusFilter} onChange={setStatusFilter} />
+      <OrderStatusFilter value={statusFilters} onChange={setStatusFilters} />
       <Text
         style={{
           fontWeight: '900',
@@ -257,7 +257,7 @@ export function CustomerDashboardScreen({ navigation }: any) {
             <Text style={{ fontWeight: '700', fontSize: 13, color: '#6B7280', textAlign: 'center' }}>
               {myOrders.length === 0
                 ? 'Create an errand in Kozhikode to receive bids from Task Boys!'
-                : `You have no errands with ${statusFilter.replace(/_/g, ' ')} status.`}
+                : `You have no errands with the selected statuses.`}
             </Text>
           </View>
         </BrutalCard>

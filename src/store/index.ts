@@ -147,7 +147,7 @@ export const useStore = create<AppState>((set, get) => ({
   // ── Initial state ──────────────────────────────────────────────────────────
   currentUser: null,
   adminMode: 'CUSTOMER',
-  simulatorEnabled: true,
+  simulatorEnabled: false,
   users: SEED_USERS,
   orders: [],
 
@@ -615,26 +615,8 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   // ── Expire offer ──────────────────────────────────────────────────────────
-  expireOffer(orderId, threadId, offerId) {
-    set((s) => ({
-      orders: s.orders.map((o) => {
-        if (o.id !== orderId) return o;
-        return {
-          ...o,
-          threads: o.threads.map((t) => {
-            if (t.id !== threadId) return t;
-            return {
-              ...t,
-              offers: t.offers.map((of) =>
-                of.id === offerId && of.status === 'PENDING'
-                  ? { ...of, status: 'EXPIRED' }
-                  : of,
-              ),
-            };
-          }),
-        };
-      }),
-    }));
+  expireOffer() {
+    // timer disabled — no-op
   },
 
   // ── Internal helper ───────────────────────────────────────────────────────
