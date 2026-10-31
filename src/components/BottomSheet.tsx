@@ -26,13 +26,13 @@ import {
   KeyboardAvoidingView,
   Modal,
   Pressable,
-  ScrollView,
   Text,
   TouchableWithoutFeedback,
   View,
   ViewStyle,
 } from 'react-native';
 import { BORDER_RADIUS, BORDER_WIDTH, Card, Neutral } from '../theme';
+import { KeyboardAwareScrollView } from './KeyboardAwareScrollView';
 
 export interface BottomSheetProps {
   visible: boolean;
@@ -170,13 +170,13 @@ export function BottomSheet({
               {/* Body — scrollable when snapHeight is set; lifts above the keyboard */}
               {snapHeight ? (
                 <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
-                  <ScrollView
+                  <KeyboardAwareScrollView
                     showsVerticalScrollIndicator={false}
-                    keyboardShouldPersistTaps="never"
+                    keyboardShouldPersistTaps="handled"
                     contentContainerStyle={{ flexGrow: 1 }}
                   >
                     {children}
-                  </ScrollView>
+                  </KeyboardAwareScrollView>
                 </KeyboardAvoidingView>
               ) : (
                 <KeyboardAvoidingView behavior="padding">{children}</KeyboardAvoidingView>
@@ -188,4 +188,3 @@ export function BottomSheet({
     </Modal>
   );
 }
-

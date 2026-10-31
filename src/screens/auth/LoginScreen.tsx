@@ -2,12 +2,17 @@ import React, { useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
-  ScrollView,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
-import { BrutalBadge, BrutalButton, BrutalCard, BrutalInput } from '../../components';
+import {
+  BrutalBadge,
+  BrutalButton,
+  BrutalCard,
+  BrutalInput,
+  KeyboardAwareScrollView,
+} from '../../components';
 import { Canvas, CTA, Card, Neutral } from '../../theme';
 import { useStore } from '../../store';
 
@@ -41,14 +46,14 @@ export function LoginScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       style={{ flex: 1, backgroundColor: Canvas.purple }}
     >
-      <ScrollView
+      <KeyboardAwareScrollView
         contentContainerStyle={{
           flexGrow: 1,
           justifyContent: 'center',
           padding: 20,
           gap: 20,
         }}
-        keyboardShouldPersistTaps="never"
+        keyboardShouldPersistTaps="handled"
       >
         {/* Brand Title */}
         <View style={{ alignItems: 'center', marginVertical: 12 }}>
@@ -263,8 +268,7 @@ export function LoginScreen() {
             </View>
           </View>
         </BrutalCard>
-      </ScrollView>
+      </KeyboardAwareScrollView>
     </KeyboardAvoidingView>
   );
 }
-

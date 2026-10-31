@@ -10,6 +10,10 @@ export type { BrutalCardProps } from './BrutalCard';
 export { BrutalInput } from './BrutalInput';
 export type { BrutalInputProps } from './BrutalInput';
 
+export { KeyboardAwareScrollView } from './KeyboardAwareScrollView';
+export { BidDetailsModal } from './BidDetailsModal';
+export { OrderStatusFilter } from './OrderStatusFilter';
+
 export { BottomSheet } from './BottomSheet';
 export type { BottomSheetProps } from './BottomSheet';
 

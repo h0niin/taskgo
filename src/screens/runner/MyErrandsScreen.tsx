@@ -12,8 +12,10 @@ import {
   BrutalBadge,
   BrutalButton,
   BrutalCard,
+  OrderStatusFilter,
   ProofUploadSheet,
   StaticMapCard,
+  STATUS_BADGE_COLORS,
 } from '../../components';
 import { Canvas, Card, CTA, Neutral } from '../../theme';
 import {
@@ -24,7 +26,7 @@ import {
   useStore,
 } from '../../store';
 import { formatDateTime, formatRupees } from '../../utils/format';
-import type { ErrandOrder, ProgressStep } from '../../types/models';
+import type { ErrandOrder, OrderStatus, ProgressStep } from '../../types/models';
 import {
   Bike,
   CheckCircle2,
@@ -36,10 +38,11 @@ import {
   Zap,
 } from 'lucide-react-native';
 
-type TabKind = 'Bidding' | 'Active' | 'Done';
+type TabKind = 'Bidding' | 'Active' | 'Done' | 'Other';
 
 export function MyErrandsScreen({ navigation }: any) {
   const [tab, setTab] = useState<TabKind>('Active');
+  const [statusFilter, setStatusFilter] = useState<OrderStatus | 'ALL'>('ALL');
   const [proofSheetVisible, setProofSheetVisible] = useState(false);
   const [selectedProofOrder, setSelectedProofOrder] = useState<ErrandOrder | null>(null);
 
@@ -55,6 +58,33 @@ export function MyErrandsScreen({ navigation }: any) {
   const biddingList = selectRunnerBiddingThreads(orders, runnerId);
   const activeList = selectRunnerActive(orders, runnerId);
   const doneList = selectRunnerDone(orders, runnerId);
+  const runnerOrders = orders.filter(
+    (order) =>
+      order.assignedRunnerId === runnerId ||
+      order.threads.some((thread) => thread.runnerId === runnerId),
+  );
+  const otherList = runnerOrders.filter(
+    (order) =>
+      ['AGREED', 'AWAITING_DEPOSIT', 'CANCELLED'].includes(order.status) &&
+      (statusFilter === 'ALL' || order.status === statusFilter),
+  );
+  const filteredBiddingList = biddingList.filter(
+    ({ order }) => statusFilter === 'ALL' || order.status === statusFilter,
+  );
+  const filteredActiveList = activeList.filter(
+    (order) => statusFilter === 'ALL' || order.status === statusFilter,
+  );
+  const filteredDoneList = doneList.filter(
+    (order) => statusFilter === 'ALL' || order.status === statusFilter,
+  );
+  const handleStatusFilter = (status: OrderStatus | 'ALL') => {
+    setStatusFilter(status);
+    if (status === 'ALL') return;
+    if (['PLACED', 'BIDDING'].includes(status)) setTab('Bidding');
+    else if (['AGREED', 'AWAITING_DEPOSIT', 'CANCELLED'].includes(status)) setTab('Other');
+    else if (status === 'COMPLETED') setTab('Done');
+    else setTab('Active');
+  };
 
   const handleAdvanceStep = (orderId: string, nextStep: ProgressStep) => {
     advanceProgress(orderId, nextStep);
@@ -100,14 +130,18 @@ export function MyErrandsScreen({ navigation }: any) {
             overflow: 'hidden',
           }}
         >
-          {(['Bidding', 'Active', 'Done'] as TabKind[]).map((t) => {
+          {(['Bidding', 'Active', 'Done', 'Other'] as TabKind[]).map((t) => {
             const active = tab === t;
             const count =
               t === 'Bidding'
                 ? biddingList.length
                 : t === 'Active'
                 ? activeList.length
-                : doneList.length;
+                : t === 'Done'
+                ? doneList.length
+                : runnerOrders.filter((order) =>
+                    ['AGREED', 'AWAITING_DEPOSIT', 'CANCELLED'].includes(order.status),
+                  ).length;
 
             return (
               <Pressable
@@ -150,10 +184,12 @@ export function MyErrandsScreen({ navigation }: any) {
           })}
         </View>
 
+        <OrderStatusFilter value={statusFilter} onChange={handleStatusFilter} />
+
         {/* ── Tab 1: Bidding ───────────────────────────────────────────────────── */}
         {tab === 'Bidding' && (
           <View style={{ gap: 12 }}>
-            {biddingList.length === 0 ? (
+            {filteredBiddingList.length === 0 ? (
               <BrutalCard backgroundColor={Card.cream}>
                 <View style={{ padding: 24, alignItems: 'center', gap: 6 }}>
                   <Clock size={32} color="#6B7280" />
@@ -166,7 +202,7 @@ export function MyErrandsScreen({ navigation }: any) {
                 </View>
               </BrutalCard>
             ) : (
-              biddingList.map(({ order, thread }) => {
+              filteredBiddingList.map(({ order, thread }) => {
                 const latestOffer = thread.offers[thread.offers.length - 1];
                 const needsMyAction =
                   latestOffer?.status === 'PENDING' &&
@@ -242,7 +278,7 @@ export function MyErrandsScreen({ navigation }: any) {
         {/* ── Tab 2: Active (SPEC Section 7 Sequential Execution Flow) ─────────── */}
         {tab === 'Active' && (
           <View style={{ gap: 14 }}>
-            {activeList.length === 0 ? (
+            {filteredActiveList.length === 0 ? (
               <BrutalCard backgroundColor={Card.cream}>
                 <View style={{ padding: 28, alignItems: 'center', gap: 8 }}>
                   <Bike size={36} color="#6B7280" />
@@ -255,7 +291,7 @@ export function MyErrandsScreen({ navigation }: any) {
                 </View>
               </BrutalCard>
             ) : (
-              activeList.map((order) => {
+              filteredActiveList.map((order) => {
                 const step = order.progressStep;
                 const isAssigned = order.status === 'ASSIGNED';
                 const isInProgress = order.status === 'IN_PROGRESS';
@@ -325,7 +361,7 @@ export function MyErrandsScreen({ navigation }: any) {
                       >
                         <Phone size={16} color={Neutral.black} />
                         <Text style={{ fontWeight: '900', fontSize: 12, textTransform: 'uppercase' }}>
-                          Call Customer for Directions
+                          Call Customer for Doubts.
                         </Text>
                       </TouchableOpacity>
 
@@ -450,7 +486,7 @@ export function MyErrandsScreen({ navigation }: any) {
                     </Text>
                     <Text style={{ fontWeight: '900', fontSize: 24 }}>
                       {formatRupees(
-                        doneList.reduce((acc, curr) => acc + (curr.agreedFee ?? 0), 0),
+                        filteredDoneList.reduce((acc, curr) => acc + (curr.agreedFee ?? 0), 0),
                       )}
                     </Text>
                   </View>
@@ -465,7 +501,7 @@ export function MyErrandsScreen({ navigation }: any) {
                     </Text>
                     <Text style={{ fontWeight: '900', fontSize: 24 }}>
                       {formatRupees(
-                        doneList.reduce((acc, curr) => acc + (curr.storeBillAmount ?? 0), 0),
+                        filteredDoneList.reduce((acc, curr) => acc + (curr.storeBillAmount ?? 0), 0),
                       )}
                     </Text>
                   </View>
@@ -473,7 +509,7 @@ export function MyErrandsScreen({ navigation }: any) {
               </View>
             </View>
 
-            {doneList.length === 0 ? (
+            {filteredDoneList.length === 0 ? (
               <BrutalCard backgroundColor={Card.cream}>
                 <View style={{ padding: 24, alignItems: 'center', gap: 6 }}>
                   <Text style={{ fontWeight: '900', fontSize: 16, textTransform: 'uppercase' }}>
@@ -485,7 +521,7 @@ export function MyErrandsScreen({ navigation }: any) {
                 </View>
               </BrutalCard>
             ) : (
-              doneList.map((order) => (
+              filteredDoneList.map((order) => (
                 <BrutalCard key={order.id} backgroundColor={Card.cream}>
                   <View style={{ padding: 16, gap: 10 }}>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -569,6 +605,39 @@ export function MyErrandsScreen({ navigation }: any) {
                         ) : null}
                       </View>
                     ) : null}
+                  </View>
+                </BrutalCard>
+              ))
+            )}
+          </View>
+        )}
+        {tab === 'Other' && (
+          <View style={{ gap: 12 }}>
+            {otherList.length === 0 ? (
+              <BrutalCard backgroundColor={Card.cream}>
+                <View style={{ padding: 24, alignItems: 'center', gap: 6 }}>
+                  <Text style={{ fontWeight: '900', fontSize: 16, textTransform: 'uppercase' }}>
+                    No Errands With This Status
+                  </Text>
+                </View>
+              </BrutalCard>
+            ) : (
+              otherList.map((order) => (
+                <BrutalCard key={order.id} backgroundColor={Card.cream}>
+                  <View style={{ padding: 16, gap: 10 }}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <BrutalBadge
+                        label={order.status}
+                        color={STATUS_BADGE_COLORS[order.status] ?? Neutral.black}
+                      />
+                      <Text style={{ fontWeight: '900', fontSize: 12, color: '#6B7280' }}>
+                        {formatDateTime(order.createdAt)}
+                      </Text>
+                    </View>
+                    <Text style={{ fontWeight: '900', fontSize: 16 }}>{order.category}</Text>
+                    <Text style={{ fontWeight: '800', fontSize: 14 }}>
+                      {order.stops[0]?.address} → {order.stops[order.stops.length - 1]?.address}
+                    </Text>
                   </View>
                 </BrutalCard>
               ))

@@ -11,6 +11,7 @@ import {
   BrutalButton,
   BrutalCard,
   BrutalCardSkeleton,
+  OrderStatusFilter,
   STATUS_BADGE_COLORS,
 } from '../../components';
 import { Canvas, Card, CTA, Neutral } from '../../theme';
@@ -20,16 +21,21 @@ import {
   useStore,
 } from '../../store';
 import { formatOrderId, formatRupees } from '../../utils/format';
+import type { OrderStatus } from '../../types/models';
 import { Bike, Navigation, ArrowRight, Clock, Plus } from 'lucide-react-native';
 
 export function CustomerDashboardScreen({ navigation }: any) {
   const [refreshing, setRefreshing] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<OrderStatus | 'ALL'>('ALL');
   const currentUser = useStore((s) => s.currentUser);
   const adminMode = useStore((s) => s.adminMode);
   const orders = useStore((s) => s.orders);
 
   const customerId = effectiveCustomerId(currentUser, adminMode);
   const myOrders = selectCustomerOrders(orders, customerId);
+  const filteredOrders = myOrders.filter(
+    (order) => statusFilter === 'ALL' || order.status === statusFilter,
+  );
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -222,6 +228,7 @@ export function CustomerDashboardScreen({ navigation }: any) {
       </View>
 
       {/* ── Bento Orders List ────────────────────────────────────────────────── */}
+      <OrderStatusFilter value={statusFilter} onChange={setStatusFilter} />
       <Text
         style={{
           fontWeight: '900',
@@ -240,21 +247,23 @@ export function CustomerDashboardScreen({ navigation }: any) {
           <BrutalCardSkeleton />
           <BrutalCardSkeleton />
         </View>
-      ) : myOrders.length === 0 ? (
+      ) : filteredOrders.length === 0 ? (
         <BrutalCard backgroundColor={Card.cream}>
           <View style={{ padding: 28, alignItems: 'center', gap: 8 }}>
             <Clock size={32} color="#6B7280" />
             <Text style={{ fontWeight: '900', fontSize: 16, textTransform: 'uppercase' }}>
-              No Errands Yet
+              {myOrders.length === 0 ? 'No Errands Yet' : 'No Matching Errands'}
             </Text>
             <Text style={{ fontWeight: '700', fontSize: 13, color: '#6B7280', textAlign: 'center' }}>
-              Create an errand in Kozhikode to receive bids from Task Boys!
+              {myOrders.length === 0
+                ? 'Create an errand in Kozhikode to receive bids from Task Boys!'
+                : `You have no errands with ${statusFilter.replace(/_/g, ' ')} status.`}
             </Text>
           </View>
         </BrutalCard>
       ) : (
         <View style={{ gap: 12 }}>
-          {myOrders.map((order) => {
+          {filteredOrders.map((order) => {
             const hasBids = order.threads.length > 0;
             const isDone = order.status === 'COMPLETED';
 

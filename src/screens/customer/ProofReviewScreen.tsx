@@ -3,7 +3,6 @@ import {
   Image,
   KeyboardAvoidingView,
   Platform,
-  ScrollView,
   Text,
   TextInput,
   TouchableOpacity,
@@ -13,6 +12,7 @@ import {
   BrutalBadge,
   BrutalButton,
   BrutalCard,
+  KeyboardAwareScrollView,
 } from '../../components';
 import { Canvas, Card, CTA, Neutral } from '../../theme';
 import { useStore } from '../../store';
@@ -85,7 +85,7 @@ export function ProofReviewScreen({ route, navigation }: any) {
         </Text>
       </View>
 
-      <ScrollView contentContainerStyle={{ padding: 16, gap: 16 }}>
+      <KeyboardAwareScrollView contentContainerStyle={{ padding: 16, gap: 16 }}>
         {/* Banner */}
         <View
           style={{
@@ -325,8 +325,7 @@ export function ProofReviewScreen({ route, navigation }: any) {
             </View>
           </BrutalCard>
         )}
-      </ScrollView>
+      </KeyboardAwareScrollView>
     </KeyboardAvoidingView>
   );
 }
-

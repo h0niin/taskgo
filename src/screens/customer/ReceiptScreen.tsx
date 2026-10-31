@@ -5,7 +5,6 @@ import {
   Modal,
   Platform,
   Pressable,
-  ScrollView,
   Text,
   TextInput,
   TouchableOpacity,
@@ -15,6 +14,7 @@ import {
   BrutalBadge,
   BrutalButton,
   BrutalCard,
+  KeyboardAwareScrollView,
 } from '../../components';
 import { Canvas, Card, CTA, Neutral } from '../../theme';
 import { useStore } from '../../store';
@@ -87,7 +87,7 @@ export function ReceiptScreen({ route, navigation }: any) {
         <BrutalBadge label="SETTLED" color="#10B981" starburst />
       </View>
 
-      <ScrollView contentContainerStyle={{ padding: 16, gap: 16 }}>
+      <KeyboardAwareScrollView contentContainerStyle={{ padding: 16, gap: 16 }}>
         {/* Paper Invoice Container with Jagged Top/Bottom Edge (SPEC Section 8.5) */}
         <View style={{ position: 'relative' }}>
           {/* Top Jagged Perforation Teeth */}
@@ -405,7 +405,7 @@ export function ReceiptScreen({ route, navigation }: any) {
           onPress={() => navigation.goBack()}
           style={{ marginBottom: 20 }}
         />
-      </ScrollView>
+      </KeyboardAwareScrollView>
 
       {/* Bill Photo Full-Screen Modal */}
       {order.billPhotoUri ? (
@@ -475,4 +475,3 @@ export function ReceiptScreen({ route, navigation }: any) {
     </KeyboardAvoidingView>
   );
 }
-

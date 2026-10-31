@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import {
   Image,
-  ScrollView,
   Switch,
   Text,
   TouchableOpacity,
@@ -10,8 +9,8 @@ import {
 import * as ImagePicker from 'expo-image-picker';
 import { BottomSheet } from './BottomSheet';
 import { BrutalButton } from './BrutalButton';
-import { BrutalInput } from './BrutalInput';
 import { BrutalBadge } from './BrutalBadge';
+import { BidDetailsModal } from './BidDetailsModal';
 import { CTA, Neutral } from '../theme';
 import { Camera, Image as ImageIcon, Receipt, CheckCircle, AlertCircle } from 'lucide-react-native';
 
@@ -36,6 +35,7 @@ export function ProofUploadSheet({
   const [purchaseMade, setPurchaseMade] = useState(false);
   const [billUri, setBillUri] = useState<string | null>(null);
   const [billAmount, setBillAmount] = useState('');
+  const [billAmountModalVisible, setBillAmountModalVisible] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const pickImage = async (
@@ -124,13 +124,14 @@ export function ProofUploadSheet({
   };
 
   return (
+    <>
     <BottomSheet
-      visible={visible}
+      visible={visible && !billAmountModalVisible}
       onClose={onClose}
       title="SUBMIT PROOF OF COMPLETION"
       snapHeight={580}
     >
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ gap: 16 }}>
+      <View style={{ gap: 16 }}>
         {error ? (
           <View
             style={{
@@ -273,13 +274,20 @@ export function ProofUploadSheet({
           {/* Conditional store bill inputs */}
           {purchaseMade && (
             <View style={{ gap: 10, borderTopWidth: 2, borderColor: '#E5E7EB', paddingTop: 10 }}>
-              <BrutalInput
-                label="Exact Bill Amount (₹) *"
-                placeholder="e.g. 450"
-                keyboardType="numeric"
-                value={billAmount}
-                onChangeText={setBillAmount}
-              />
+              <View style={{ gap: 4 }}>
+                <Text style={{ fontWeight: '700', fontSize: 13, textTransform: 'uppercase' }}>
+                  Exact Bill Amount (₹) *
+                </Text>
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  onPress={() => setBillAmountModalVisible(true)}
+                  style={{ backgroundColor: '#FFFFFF', borderWidth: 3, borderColor: Neutral.black, borderRadius: 999, padding: 14 }}
+                >
+                  <Text style={{ fontWeight: '700', fontSize: 15, color: billAmount ? Neutral.black : '#9CA3AF' }}>
+                    {billAmount ? `₹${billAmount}` : 'Tap to enter bill amount'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
 
               <Text style={{ fontWeight: '900', fontSize: 11, textTransform: 'uppercase', color: Neutral.black }}>
                 Store Receipt Photo *
@@ -361,8 +369,22 @@ export function ProofUploadSheet({
           onPress={handleSubmit}
           style={{ marginBottom: 16 }}
         />
-      </ScrollView>
+      </View>
     </BottomSheet>
+    <BidDetailsModal
+      key={billAmountModalVisible ? 'bill-open' : 'bill-closed'}
+      visible={billAmountModalVisible}
+      amount={billAmount}
+      note=""
+      showNote={false}
+      title="Enter Local Purchase Bill Amount"
+      submitLabel="Use Amount"
+      onCancel={() => setBillAmountModalVisible(false)}
+      onSubmit={(amount) => {
+        setBillAmount(amount);
+        setBillAmountModalVisible(false);
+      }}
+    />
+    </>
   );
 }
-

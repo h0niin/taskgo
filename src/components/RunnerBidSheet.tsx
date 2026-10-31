@@ -7,8 +7,8 @@ import {
 } from 'react-native';
 import { BottomSheet } from './BottomSheet';
 import { BrutalButton } from './BrutalButton';
-import { BrutalInput } from './BrutalInput';
 import { BrutalBadge } from './BrutalBadge';
+import { BidDetailsModal } from './BidDetailsModal';
 import { Card, CTA, Neutral } from '../theme';
 import { formatDistance, formatRupees } from '../utils/format';
 import type { ErrandOrder } from '../types/models';
@@ -38,6 +38,7 @@ export function RunnerBidSheet({
   onOpenNegotiation,
 }: RunnerBidSheetProps) {
   const [price, setPrice] = useState('');
+  const [priceModalVisible, setPriceModalVisible] = useState(false);
   const [note, setNote] = useState('');
   const [editing, setEditing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -109,14 +110,15 @@ export function RunnerBidSheet({
   };
 
   return (
-    <BottomSheet
-      visible={visible}
-      onClose={onClose}
-      title="ERRAND & BIDDING"
-      snapHeight={600}
-    >
-      <View style={{ gap: 16 }}>
-        {error ? (
+    <>
+      <BottomSheet
+        visible={visible && !priceModalVisible}
+        onClose={onClose}
+        title="ERRAND & BIDDING"
+        snapHeight={600}
+      >
+        <View style={{ gap: 16 }}>
+          {error ? (
           <View
             style={{
               backgroundColor: '#FEE2E2',
@@ -134,7 +136,7 @@ export function RunnerBidSheet({
               {error}
             </Text>
           </View>
-        ) : null}
+          ) : null}
 
         {/* Category & Distance Header */}
         <View
@@ -239,18 +241,18 @@ export function RunnerBidSheet({
               <Text style={{ fontWeight: '900', fontSize: 14, textTransform: 'uppercase' }}>
                 Edit Your Bid (Before Customer Reply)
               </Text>
-              <BrutalInput
-                label="New Price (₹)"
-                value={price}
-                onChangeText={setPrice}
-                keyboardType="numeric"
-              />
-              <BrutalInput
-                label="New Reasoning Note"
-                value={note}
-                onChangeText={setNote}
-                maxLength={120}
-              />
+              <View style={{ gap: 4 }}>
+                <Text style={{ fontWeight: '700', fontSize: 13, textTransform: 'uppercase' }}>Bid Amount & Reasoning Note</Text>
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  onPress={() => setPriceModalVisible(true)}
+                  style={{ backgroundColor: '#FFFFFF', borderWidth: 3, borderColor: Neutral.black, borderRadius: 999, padding: 14 }}
+                >
+                  <Text style={{ fontWeight: '700', fontSize: 15, color: price ? Neutral.black : '#9CA3AF' }}>
+                    {price ? `${formatRupees(Number(price))} · ${note || 'Add reasoning note'}` : 'Tap to enter amount and note'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
               <View style={{ flexDirection: 'row', gap: 10 }}>
                 <View style={{ flex: 1 }}>
                   <BrutalButton
@@ -356,21 +358,18 @@ export function RunnerBidSheet({
               <BrutalBadge label="NO BASE PRICE" color="#8B5CF6" />
             </View>
 
-            <BrutalInput
-              label="Your Price (₹) *"
-              placeholder="e.g. 120"
-              keyboardType="numeric"
-              value={price}
-              onChangeText={setPrice}
-            />
-
-            <BrutalInput
-              label={`Short Note (${120 - note.length} chars left) *`}
-              placeholder="e.g. Heavy rain along Mavoor Road & long shop queue"
-              value={note}
-              onChangeText={setNote}
-              maxLength={120}
-            />
+            <View style={{ gap: 4 }}>
+              <Text style={{ fontWeight: '700', fontSize: 13, textTransform: 'uppercase' }}>Bid Amount & Reasoning Note *</Text>
+              <TouchableOpacity
+                accessibilityRole="button"
+                onPress={() => setPriceModalVisible(true)}
+                style={{ backgroundColor: '#FFFFFF', borderWidth: 3, borderColor: Neutral.black, borderRadius: 999, padding: 14 }}
+              >
+                <Text style={{ fontWeight: '700', fontSize: 15, color: price ? Neutral.black : '#9CA3AF' }}>
+                  {price ? `${formatRupees(Number(price))} · ${note || 'Add reasoning note'}` : 'Tap to enter amount and note'}
+                </Text>
+              </TouchableOpacity>
+            </View>
 
             <BrutalButton
               label="SUBMIT RUNNER BID"
@@ -381,7 +380,21 @@ export function RunnerBidSheet({
             />
           </View>
         )}
-      </View>
-    </BottomSheet>
+        </View>
+      </BottomSheet>
+
+      <BidDetailsModal
+        key={priceModalVisible ? 'open' : 'closed'}
+        visible={priceModalVisible}
+        amount={price}
+        note={note}
+        onCancel={() => setPriceModalVisible(false)}
+        onSubmit={(amount, reasoning) => {
+          setPrice(amount);
+          setNote(reasoning);
+          setPriceModalVisible(false);
+        }}
+      />
+    </>
   );
 }

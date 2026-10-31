@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
-  ScrollView,
   Text,
   TouchableOpacity,
   View,
@@ -11,7 +10,8 @@ import {
   BrutalBadge,
   BrutalButton,
   BrutalCard,
-  BrutalInput,
+  BidDetailsModal,
+  KeyboardAwareScrollView,
   OfferCountdown,
 } from '../../components';
 import { Canvas, Card, CTA, Neutral } from '../../theme';
@@ -32,9 +32,6 @@ export function RunnerNegotiationScreen({ route, navigation }: any) {
   const thread = order?.threads.find((t) => t.id === threadId);
 
   const [showCounterInput, setShowCounterInput] = useState(false);
-  const [counterPrice, setCounterPrice] = useState('');
-  const [counterNote, setCounterNote] = useState('');
-  const [formError, setFormError] = useState<string | null>(null);
 
   if (!order || !thread) {
     return (
@@ -65,29 +62,9 @@ export function RunnerNegotiationScreen({ route, navigation }: any) {
     navigation.goBack();
   };
 
-  const handleSendCounter = () => {
-    setFormError(null);
-    const parsedPrice = parseInt(counterPrice, 10);
-
-    if (isNaN(parsedPrice) || parsedPrice <= 0) {
-      setFormError('Please enter a valid counter price (> ₹0)');
-      return;
-    }
-
-    if (!counterNote.trim()) {
-      setFormError('Reasoning note is required (max 120 chars)');
-      return;
-    }
-
-    if (counterNote.trim().length > 120) {
-      setFormError('Note must be at most 120 characters');
-      return;
-    }
-
-    runnerCounter(orderId, threadId, parsedPrice, counterNote.trim());
+  const handleSendCounter = (amount: string, note: string) => {
+    runnerCounter(orderId, threadId, Number(amount), note);
     setShowCounterInput(false);
-    setCounterPrice('');
-    setCounterNote('');
   };
 
   return (
@@ -118,7 +95,7 @@ export function RunnerNegotiationScreen({ route, navigation }: any) {
         <BrutalBadge label={`Thread: ${thread.status}`} color={CTA.lime} />
       </View>
 
-      <ScrollView contentContainerStyle={{ padding: 16, gap: 16 }} keyboardShouldPersistTaps="never">
+      <KeyboardAwareScrollView contentContainerStyle={{ padding: 16, gap: 16 }} keyboardShouldPersistTaps="handled">
         {/* Order Context Card */}
         <View
           style={{
@@ -266,56 +243,15 @@ export function RunnerNegotiationScreen({ route, navigation }: any) {
                 </View>
               </View>
             ) : (
-              <BrutalCard backgroundColor="#FFFFFF">
-                <View style={{ padding: 16, gap: 12 }}>
-                  <Text style={{ fontWeight: '900', fontSize: 14, textTransform: 'uppercase' }}>
-                    Send Counter Quote ({countersExchanged + 1}/5)
-                  </Text>
-
-                  {formError ? (
-                    <Text style={{ fontWeight: '900', fontSize: 12, color: '#EF4444' }}>
-                      ⚠️ {formError}
-                    </Text>
-                  ) : null}
-
-                  <BrutalInput
-                    label="Counter Price (₹)"
-                    placeholder="e.g. 110"
-                    keyboardType="numeric"
-                    value={counterPrice}
-                    onChangeText={setCounterPrice}
-                  />
-
-                  <BrutalInput
-                    label={`Reasoning Note (${120 - counterNote.length} left)`}
-                    placeholder="Rationale for counter..."
-                    value={counterNote}
-                    onChangeText={setCounterNote}
-                    maxLength={120}
-                  />
-
-                  <View style={{ flexDirection: 'row', gap: 10, marginTop: 4 }}>
-                    <View style={{ flex: 1 }}>
-                      <BrutalButton
-                        label="Cancel"
-                        color="#F3F4F6"
-                        fullWidth
-                        size="sm"
-                        onPress={() => setShowCounterInput(false)}
-                      />
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <BrutalButton
-                        label="Submit Counter"
-                        color={CTA.lime}
-                        fullWidth
-                        size="sm"
-                        onPress={handleSendCounter}
-                      />
-                    </View>
-                  </View>
-                </View>
-              </BrutalCard>
+              <BidDetailsModal
+                visible={showCounterInput}
+                amount=""
+                note=""
+                title={`Send Counter Quote (${countersExchanged + 1}/5)`}
+                submitLabel="Submit Counter"
+                onCancel={() => setShowCounterInput(false)}
+                onSubmit={handleSendCounter}
+              />
             )}
           </View>
         ) : thread.status === 'AGREED' ? (
@@ -331,8 +267,7 @@ export function RunnerNegotiationScreen({ route, navigation }: any) {
             </View>
           </BrutalCard>
         ) : null}
-      </ScrollView>
+      </KeyboardAwareScrollView>
     </KeyboardAvoidingView>
   );
 }
-

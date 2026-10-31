@@ -15,6 +15,7 @@ import {
   BrutalButton,
   BrutalCard,
   BrutalInput,
+  KeyboardAwareScrollView,
 } from '../../components';
 import { Canvas, Card, CTA, Neutral } from '../../theme';
 import { ORDER_CATEGORIES } from '../../data/seed';
@@ -131,18 +132,22 @@ export function CreateOrderScreen({ navigation }: any) {
   const handleSubmit = () => {
     setError(null);
 
+    if (!category.trim()) {
+      setError('Please select a category.');
+      return;
+    }
+
+    if (category === 'Custom Task' && !customCategory.trim()) {
+      setError('Please describe the custom task.');
+      return;
+    }
+
     // Validate stops
     for (let i = 0; i < stops.length; i++) {
       if (!stops[i].address.trim()) {
         setError(`Please enter the address for Stop #${i + 1}`);
         return;
       }
-    }
-
-    // Validate instructions
-    if (!instructions.trim()) {
-      setError('Special instructions are required (e.g. what to do if shop is closed or items unavailable).');
-      return;
     }
 
     const effectiveCategory =
@@ -178,7 +183,7 @@ export function CreateOrderScreen({ navigation }: any) {
       behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
       style={{ flex: 1, backgroundColor: Canvas.purple }}
     >
-      <ScrollView
+      <KeyboardAwareScrollView
         contentContainerStyle={{ padding: 16, gap: 16 }}
         keyboardShouldPersistTaps="handled"
       >
@@ -230,7 +235,7 @@ export function CreateOrderScreen({ navigation }: any) {
         <View style={{ padding: 18, gap: 12 }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
             <Text style={{ fontWeight: '900', fontSize: 14, textTransform: 'uppercase' }}>
-              Category: <Text style={{ color: '#8B5CF6' }}>{category}</Text>
+              Category: <Text style={{ color: '#8B5CF6' }}>{category || 'Select category *'}</Text>
             </Text>
             <TouchableOpacity
               onPress={() => setCategoryModalVisible(true)}
@@ -404,7 +409,7 @@ export function CreateOrderScreen({ navigation }: any) {
       <BrutalCard backgroundColor={Card.cream}>
         <View style={{ padding: 18, gap: 10 }}>
           <Text style={{ fontWeight: '900', fontSize: 14, textTransform: 'uppercase' }}>
-            Special Instructions (Required)
+            Special Instructions (Optional)
           </Text>
           <Text style={{ fontWeight: '700', fontSize: 12, color: '#4B5563' }}>
             What should the runner do if the shop is closed, item out of stock, or contact unreachable?
@@ -453,94 +458,104 @@ export function CreateOrderScreen({ navigation }: any) {
         animationType="fade"
         onRequestClose={() => setCategoryModalVisible(false)}
       >
-        <Pressable
-          onPress={() => setCategoryModalVisible(false)}
-          style={{
-            flex: 1,
-            backgroundColor: 'rgba(0,0,0,0.6)',
-            justifyContent: 'center',
-            padding: 20,
-          }}
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={{ flex: 1 }}
         >
           <Pressable
-            onPress={(e) => e.stopPropagation()}
+            onPress={() => setCategoryModalVisible(false)}
             style={{
-              backgroundColor: Card.cream,
-              borderWidth: 4,
-              borderColor: Neutral.black,
-              borderRadius: 20,
+              flex: 1,
+              backgroundColor: 'rgba(0,0,0,0.6)',
+              justifyContent: 'center',
               padding: 20,
-              gap: 16,
-              maxHeight: '80%',
             }}
           >
-            <Text style={{ fontWeight: '900', fontSize: 18, textTransform: 'uppercase' }}>
-              Select Errand Category
-            </Text>
-
-            <View
+            <Pressable
+              onPress={(e) => e.stopPropagation()}
               style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                backgroundColor: '#FFFFFF',
-                borderWidth: 2,
+                backgroundColor: Card.cream,
+                borderWidth: 4,
                 borderColor: Neutral.black,
-                borderRadius: 999,
-                paddingHorizontal: 12,
-                gap: 8,
+                borderRadius: 20,
+                padding: 20,
+                gap: 16,
+                maxHeight: '80%',
               }}
             >
-              <Search size={18} color="#6B7280" />
-              <TextInput
-                placeholder="Search categories..."
-                placeholderTextColor="#9CA3AF"
-                value={categorySearchQuery}
-                onChangeText={setCategorySearchQuery}
-                style={{
-                  flex: 1,
-                  paddingVertical: 8,
-                  fontWeight: '700',
-                  fontSize: 14,
-                  color: Neutral.black,
-                }}
-              />
-            </View>
+              <KeyboardAwareScrollView
+                style={{ maxHeight: '100%', flexShrink: 1 }}
+                contentContainerStyle={{ gap: 16 }}
+              >
+                <Text style={{ fontWeight: '900', fontSize: 18, textTransform: 'uppercase' }}>
+                  Select Errand Category
+                </Text>
 
-            <ScrollView style={{ maxHeight: 260 }} showsVerticalScrollIndicator={false}>
-              <View style={{ gap: 8 }}>
-                {filteredCategories.map((cat) => (
-                  <TouchableOpacity
-                    key={cat}
-                    onPress={() => {
-                      setCategory(cat);
-                      setCategoryModalVisible(false);
-                    }}
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    backgroundColor: '#FFFFFF',
+                    borderWidth: 2,
+                    borderColor: Neutral.black,
+                    borderRadius: 999,
+                    paddingHorizontal: 12,
+                    gap: 8,
+                  }}
+                >
+                  <Search size={18} color="#6B7280" />
+                  <TextInput
+                    placeholder="Search categories..."
+                    placeholderTextColor="#9CA3AF"
+                    value={categorySearchQuery}
+                    onChangeText={setCategorySearchQuery}
                     style={{
-                      paddingVertical: 12,
-                      paddingHorizontal: 14,
-                      backgroundColor: cat === category ? '#FEF08A' : '#FFFFFF',
-                      borderWidth: 2,
-                      borderColor: Neutral.black,
-                      borderRadius: 12,
+                      flex: 1,
+                      paddingVertical: 8,
+                      fontWeight: '700',
+                      fontSize: 14,
+                      color: Neutral.black,
                     }}
-                  >
-                    <Text style={{ fontWeight: '900', fontSize: 14 }}>{cat}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </ScrollView>
+                  />
+                </View>
 
-            <BrutalButton
-              label="Close"
-              color={Neutral.white}
-              fullWidth
-              size="sm"
-              onPress={() => setCategoryModalVisible(false)}
-            />
+                <ScrollView style={{ maxHeight: 260 }} showsVerticalScrollIndicator={false}>
+                  <View style={{ gap: 8 }}>
+                    {filteredCategories.map((cat) => (
+                      <TouchableOpacity
+                        key={cat}
+                        onPress={() => {
+                          setCategory(cat);
+                          setCategoryModalVisible(false);
+                        }}
+                        style={{
+                          paddingVertical: 12,
+                          paddingHorizontal: 14,
+                          backgroundColor: cat === category ? '#FEF08A' : '#FFFFFF',
+                          borderWidth: 2,
+                          borderColor: Neutral.black,
+                          borderRadius: 12,
+                        }}
+                      >
+                        <Text style={{ fontWeight: '900', fontSize: 14 }}>{cat}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </ScrollView>
+
+                <BrutalButton
+                  label="Close"
+                  color={Neutral.white}
+                  fullWidth
+                  size="sm"
+                  onPress={() => setCategoryModalVisible(false)}
+                />
+              </KeyboardAwareScrollView>
+            </Pressable>
           </Pressable>
-        </Pressable>
+        </KeyboardAvoidingView>
       </Modal>
-      </ScrollView>
+      </KeyboardAwareScrollView>
     </KeyboardAvoidingView>
   );
 }
