@@ -21,17 +21,6 @@ import { ORDER_CATEGORIES } from '../../data/seed';
 import { useStore } from '../../store';
 import { Plus, Trash2, Search, MapPin } from 'lucide-react-native';
 
-const KOZHIKODE_LOCALITIES = [
-  'Mavoor Road',
-  'Palayam',
-  'Beach Road',
-  'Medical College',
-  'Nadakkavu',
-  'Mananchira',
-  'Feroke',
-  'Kallai',
-];
-
 interface StopDraft {
   id: string;
   type: 'PICKUP' | 'DROPOFF' | 'STOP';
@@ -39,6 +28,8 @@ interface StopDraft {
   landmark: string;
   contactName: string;
   contactPhone: string;
+  lat?: number;
+  lng?: number;
 }
 
 export function CreateOrderScreen({ navigation }: any) {
@@ -70,6 +61,10 @@ export function CreateOrderScreen({ navigation }: any) {
     },
   ]);
 
+  // OSM location search state
+  const [locationSuggestions, setLocationSuggestions] = useState<{[key: string]: Array<{name: string, lat: number, lng: number}>}>({});
+  const [locationSearchLoading, setLocationSearchLoading] = useState<{[key: string]: boolean}>({});
+
   // Multiline edge-case instructions
   const [instructions, setInstructions] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -98,10 +93,39 @@ export function CreateOrderScreen({ navigation }: any) {
     setStops(stops.filter((s) => s.id !== id));
   };
 
-  const updateStop = (id: string, field: keyof StopDraft, value: string) => {
-    setStops(
-      stops.map((s) => (s.id === id ? { ...s, [field]: value } : s)),
+  const updateStop = (id: string, field: keyof StopDraft, value: string | number) => {
+    setStops((currentStops) =>
+      currentStops.map((s) => (s.id === id ? { ...s, [field]: value as any } : s)),
     );
+  };
+
+  // Debounced OSM search when address text changes
+  const debounceAddressSearch = (id: string, text: string) => {
+    if (!text.trim()) { setLocationSuggestions((p: any) => ({ ...p, [id]: [] })); return; }
+    const t = setTimeout(() => { fetchOSM(id, text); }, 400);
+  };
+
+  const selectLocation = (id: string, suggestion: { name: string, lat: number, lng: number }) => {
+    updateStop(id, 'address', suggestion.name);
+    updateStop(id, 'lat', suggestion.lat);
+    updateStop(id, 'lng', suggestion.lng);
+    setLocationSuggestions((p: any) => ({ ...p, [id]: [] }));
+  };
+
+  const fetchOSM = async (id: string, query: string) => {
+    if (!query.trim()) { setLocationSuggestions((p: any) => ({ ...p, [id]: [] })); return; }
+    setLocationSearchLoading((p: any) => ({ ...p, [id]: true }));
+    try {
+      const res = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=4`);
+      const data = await res.json();
+      const hits = (data.features || []).map((f: any) => ({
+        name: f.properties?.name || f.properties?.label || query,
+        lat: f.geometry?.coordinates?.[1] || 0,
+        lng: f.geometry?.coordinates?.[0] || 0,
+      }));
+      setLocationSuggestions((p: any) => ({ ...p, [id]: hits }));
+    } catch { setLocationSuggestions((p: any) => ({ ...p, [id]: [] })); }
+    setLocationSearchLoading((p: any) => ({ ...p, [id]: false }));
   };
 
   const handleSubmit = () => {
@@ -134,6 +158,8 @@ export function CreateOrderScreen({ navigation }: any) {
         landmark: s.landmark.trim() || undefined,
         contactName: s.contactName.trim() || undefined,
         contactPhone: s.contactPhone.trim() || undefined,
+        lat: s.lat,
+        lng: s.lng,
       })),
       edgeCaseInstructions: instructions.trim(),
       distanceKm: Math.round((2.0 + stops.length * 1.2) * 10) / 10,
@@ -286,73 +312,77 @@ export function CreateOrderScreen({ navigation }: any) {
                     )}
                   </View>
 
-                  <BrutalInput
-                    placeholder="Address in Kozhikode (e.g. Nadakkavu)"
-                    value={stop.address}
-                    onChangeText={(val) => updateStop(stop.id, 'address', val)}
-                  />
-
-                  {/* Kozhikode Locality Quick Chips */}
-                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
-                    {KOZHIKODE_LOCALITIES.map((loc) => (
+                  {/* Address + OSM Search */}
+                  <View style={{ gap: 8 }}>
+                    <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+                      <View style={{
+                        flex: 1,
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        backgroundColor: '#FFFFFF',
+                        borderWidth: 2,
+                        borderColor: Neutral.black,
+                        borderRadius: 14,
+                        paddingHorizontal: 10,
+                      }}>
+                        <Search size={18} color="#6B7280" />
+                        <TextInput
+                          placeholder="Search any address or place..."
+                          placeholderTextColor="#9CA3AF"
+                          value={stop.address}
+                          onChangeText={(val) => {
+                            updateStop(stop.id, 'address', val);
+                            if (val.trim()) debounceAddressSearch(stop.id, val);
+                            else setLocationSuggestions((p) => ({ ...p, [stop.id]: [] }));
+                          }}
+                          style={{ flex: 1, paddingVertical: 12, paddingHorizontal: 8, fontWeight: '700', fontSize: 13, color: Neutral.black }}
+                        />
+                      </View>
                       <TouchableOpacity
-                        key={loc}
-                        onPress={() => updateStop(stop.id, 'address', `${loc}, Kozhikode`)}
+                        onPress={() => selectLocation(stop.id, {
+                          name: 'NIT Calicut',
+                          lat: 11.3196773,
+                          lng: 75.9316848,
+                        })}
                         style={{
+                          width: 44, height: 44,
+                          alignItems: 'center', justifyContent: 'center',
                           backgroundColor: '#FEF08A',
-                          borderWidth: 1.5,
-                          borderColor: Neutral.black,
-                          borderRadius: 999,
-                          paddingHorizontal: 8,
-                          paddingVertical: 3,
+                          borderWidth: 2, borderColor: Neutral.black,
+                          borderRadius: 12,
                         }}
                       >
-                        <Text style={{ fontWeight: '800', fontSize: 10, color: Neutral.black }}>
-                          + {loc}
-                        </Text>
+                        <MapPin size={20} color={Neutral.black} />
                       </TouchableOpacity>
-                    ))}
-                  </ScrollView>
+                    </View>
+                    {(locationSuggestions[stop.id]?.length ?? 0) > 0 && (
+                      <View style={{ borderWidth: 2, borderColor: Neutral.black, borderRadius: 12, overflow: 'hidden', backgroundColor: '#FFFFFF' }}>
+                        {locationSuggestions[stop.id].map((s, i) => (
+                          <TouchableOpacity key={`${s.name}-${i}`} onPress={() => selectLocation(stop.id, s)} style={{ padding: 10, borderBottomWidth: i === (locationSuggestions[stop.id]?.length ?? 0) - 1 ? 0 : 1, borderBottomColor: '#D1D5DB', backgroundColor: '#FFFFFF', flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                            <MapPin size={14} color="#7C3AED" />
+                            <Text style={{ fontWeight: '700', fontSize: 12, color: Neutral.black }}>{s.name}</Text>
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                    )}
+                  </View>
 
-                  <View style={{ flexDirection: 'row', gap: 8 }}>
-                    <View style={{ flex: 1 }}>
-                      <TextInput
-                        placeholder="Landmark (Optional)"
-                        placeholderTextColor="#9CA3AF"
-                        value={stop.landmark}
-                        onChangeText={(val) => updateStop(stop.id, 'landmark', val)}
-                        style={{
-                          backgroundColor: '#F3F4F6',
-                          borderWidth: 2,
-                          borderColor: Neutral.black,
-                          borderRadius: 999,
-                          paddingHorizontal: 12,
-                          paddingVertical: 6,
-                          fontWeight: '700',
-                          fontSize: 12,
-                          color: Neutral.black,
-                        }}
-                      />
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <TextInput
-                        placeholder="Contact Person (Optional)"
-                        placeholderTextColor="#9CA3AF"
-                        value={stop.contactName}
-                        onChangeText={(val) => updateStop(stop.id, 'contactName', val)}
-                        style={{
-                          backgroundColor: '#F3F4F6',
-                          borderWidth: 2,
-                          borderColor: Neutral.black,
-                          borderRadius: 999,
-                          paddingHorizontal: 12,
-                          paddingVertical: 6,
-                          fontWeight: '700',
-                          fontSize: 12,
-                          color: Neutral.black,
-                        }}
-                      />
-                    </View>
+                  {/* Landmark & Contact stacked below */}
+                  <View style={{ gap: 6 }}>
+                    <TextInput
+                      placeholder="Landmark (Optional)"
+                      placeholderTextColor="#9CA3AF"
+                      value={stop.landmark}
+                      onChangeText={(val) => updateStop(stop.id, 'landmark', val)}
+                      style={{ backgroundColor: '#F3F4F6', borderWidth: 2, borderColor: Neutral.black, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6, fontWeight: '700', fontSize: 12, color: Neutral.black }}
+                    />
+                    <TextInput
+                      placeholder="Contact Person (Optional)"
+                      placeholderTextColor="#9CA3AF"
+                      value={stop.contactName}
+                      onChangeText={(val) => updateStop(stop.id, 'contactName', val)}
+                      style={{ backgroundColor: '#F3F4F6', borderWidth: 2, borderColor: Neutral.black, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6, fontWeight: '700', fontSize: 12, color: Neutral.black }}
+                    />
                   </View>
                 </View>
               );

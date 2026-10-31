@@ -48,7 +48,7 @@ export function LoginScreen() {
           padding: 20,
           gap: 20,
         }}
-        keyboardShouldPersistTaps="handled"
+        keyboardShouldPersistTaps="never"
       >
         {/* Brand Title */}
         <View style={{ alignItems: 'center', marginVertical: 12 }}>

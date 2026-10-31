@@ -121,7 +121,7 @@ export function NegotiationThreadScreen({ route, navigation }: any) {
 
       <ScrollView
         contentContainerStyle={{ padding: 16, gap: 16 }}
-        keyboardShouldPersistTaps="handled"
+        keyboardShouldPersistTaps="never"
       >
         {/* Runner Header Banner */}
         <View

@@ -41,6 +41,8 @@ export interface LocationStop {
   landmark?: string;
   contactName?: string;
   contactPhone?: string;
+  lat?: number;
+  lng?: number;
 }
 
 // ─── Bidding & Negotiation ────────────────────────────────────────────────────

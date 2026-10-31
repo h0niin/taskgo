@@ -118,7 +118,7 @@ export function RunnerNegotiationScreen({ route, navigation }: any) {
         <BrutalBadge label={`Thread: ${thread.status}`} color={CTA.lime} />
       </View>
 
-      <ScrollView contentContainerStyle={{ padding: 16, gap: 16 }} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={{ padding: 16, gap: 16 }} keyboardShouldPersistTaps="never">
         {/* Order Context Card */}
         <View
           style={{

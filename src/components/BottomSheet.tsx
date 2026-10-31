@@ -172,7 +172,7 @@ export function BottomSheet({
                 <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
                   <ScrollView
                     showsVerticalScrollIndicator={false}
-                    keyboardShouldPersistTaps="handled"
+                    keyboardShouldPersistTaps="never"
                     contentContainerStyle={{ flexGrow: 1 }}
                   >
                     {children}
