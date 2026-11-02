@@ -214,7 +214,7 @@ export function MyErrandsScreen({ navigation }: any) {
                             {formatRupees(latestOffer?.price ?? 0)} ({latestOffer?.from})
                           </Text>
                           <Text style={{ fontWeight: '700', fontSize: 12, color: '#374151' }}>
-                            "{latestOffer?.note}"
+                            ({latestOffer?.note})
                           </Text>
                         </View>
 
@@ -304,7 +304,7 @@ export function MyErrandsScreen({ navigation }: any) {
                           {order.stops[0]?.address} → {order.stops[order.stops.length - 1]?.address}
                         </Text>
                         <Text style={{ fontWeight: '700', fontSize: 12, color: '#4B5563', marginTop: 2 }}>
-                          {order.stops.length} checkpoints · Special instruction: "{order.edgeCaseInstructions}"
+                          {order.stops.length} checkpoints · Special instruction: ({order.edgeCaseInstructions})
                         </Text>
                       </View>
 
@@ -411,38 +411,22 @@ export function MyErrandsScreen({ navigation }: any) {
 
         {/* ── Done (SPEC Section 9.3 Earnings Breakdown) ───────────────────────── */}
         <View style={{ gap: 12 }}>
-            {/* Runner Earnings Bento Summary */}
-            <View style={{ flexDirection: 'row', gap: 10 }}>
-              <View style={{ flex: 1 }}>
-                <BrutalCard backgroundColor={Card.mint}>
-                  <View style={{ padding: 14, gap: 4 }}>
-                    <Text style={{ fontWeight: '900', fontSize: 11, textTransform: 'uppercase' }}>
-                      Service Earnings
-                    </Text>
-                    <Text style={{ fontWeight: '900', fontSize: 24 }}>
-                      {formatRupees(
-                        doneList.reduce((acc, curr) => acc + (curr.agreedFee ?? 0), 0),
-                      )}
-                    </Text>
-                  </View>
-                </BrutalCard>
+            <BrutalCard backgroundColor={Card.mint}>
+              <View style={{ padding: 14, gap: 4 }}>
+                <Text style={{ fontWeight: '900', fontSize: 11, textTransform: 'uppercase' }}>
+                  Total Service Earnings
+                </Text>
+                <Text style={{ fontWeight: '900', fontSize: 24 }}>
+                  {formatRupees(
+                    doneList.reduce(
+                      (total, order) =>
+                        total + (order.agreedFee ?? 0) + (order.additionalCosts ?? 0),
+                      0,
+                    ),
+                  )}
+                </Text>
               </View>
-
-              <View style={{ flex: 1 }}>
-                <BrutalCard backgroundColor={Card.lavender}>
-                  <View style={{ padding: 14, gap: 4 }}>
-                    <Text style={{ fontWeight: '900', fontSize: 11, textTransform: 'uppercase' }}>
-                      Additional Costs
-                    </Text>
-                    <Text style={{ fontWeight: '900', fontSize: 24 }}>
-                      {formatRupees(
-                        doneList.reduce((acc, curr) => acc + (curr.additionalCosts ?? 0), 0),
-                      )}
-                    </Text>
-                  </View>
-                </BrutalCard>
-              </View>
-            </View>
+            </BrutalCard>
 
             {showDoneOrders && (filteredDoneList.length === 0 ? (
               <BrutalCard backgroundColor={Card.cream}>
@@ -507,7 +491,7 @@ export function MyErrandsScreen({ navigation }: any) {
                         }}
                       >
                         <Text style={{ fontWeight: '900', fontSize: 14, textTransform: 'uppercase' }}>
-                          Total Payout:
+                          Total Earnings (excl. platform fee):
                         </Text>
                         <Text style={{ fontWeight: '900', fontSize: 16 }}>
                           {formatRupees((order.agreedFee ?? 0) + (order.additionalCosts ?? 0))}
@@ -535,7 +519,7 @@ export function MyErrandsScreen({ navigation }: any) {
                         </Text>
                         {order.review ? (
                           <Text style={{ fontWeight: '700', fontSize: 12, color: '#374151', flex: 1 }} numberOfLines={1}>
-                            "{order.review}"
+                            ({order.review})
                           </Text>
                         ) : null}
                       </View>
