@@ -1,11 +1,14 @@
-// ─── Demo Simulator ───────────────────────────────────────────────────────────
-// Section 12 of SPEC.md.
-// Simulates runner responses on a single device without a real backend.
-// All actions dispatch through the same store actions as real users.
+// ─── Demo Simulator + Live WhatsApp Bridge Poller ────────────────────────────
+// Section 12 of SPEC.md + Omnichannel WhatsApp LAN Bridge.
+// Mounts once in the root app component:
+// 1. Polls the local WhatsApp Bot Bridge Server every 1.2s so orders and updates
+//    from WhatsApp and the mobile app stay synchronized in real time.
+// 2. Runs background runner simulation when simulatorEnabled is true and no
+//    real runner persona is actively logged in.
 
 import { useEffect, useRef } from 'react';
-import { useStore } from '../store';
-import type { ErrandOrder, Offer, ProgressStep } from '../types/models';
+import { getBridgeServerUrl, useStore } from '../store';
+import type { ErrandOrder } from '../types/models';
 
 const SIMULATED_RUNNER_ID = 'u_run_2';
 const SIMULATED_RUNNER_NAME = 'Vishnu Krishnan';
@@ -18,7 +21,7 @@ const MOCK_REASONING_NOTES = [
 ];
 
 /**
- * Hook to run background simulation logic.
+ * Hook to run live WhatsApp Bridge synchronization + background simulation logic.
  * Mount this once in the root app component.
  */
 export function useSimulator() {
@@ -32,10 +35,43 @@ export function useSimulator() {
   const runnerCounter = useStore((s) => s.runnerCounter);
   const advanceProgress = useStore((s) => s.advanceProgress);
   const submitProof = useStore((s) => s.submitProof);
+  const mergeRemoteOrders = useStore((s) => s.mergeRemoteOrders);
 
   // Track timer IDs to avoid duplicate execution
   const activeTimers = useRef<Set<string>>(new Set());
 
+  // ── 0. Live Omnichannel Poll (Expo Go ⟷ Laptop WhatsApp Bot Server) ────────
+  useEffect(() => {
+    let isMounted = true;
+    const baseUrl = getBridgeServerUrl();
+
+    const pollBridge = async () => {
+      try {
+        const res = await fetch(`${baseUrl}/api/orders`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = (await res.json()) as { orders?: ErrandOrder[] };
+        if (isMounted && Array.isArray(data.orders)) {
+          mergeRemoteOrders(data.orders, true);
+        }
+      } catch {
+        if (isMounted) {
+          useStore.setState({ bridgeConnected: false });
+        }
+      }
+    };
+
+    void pollBridge();
+    const intervalId = setInterval(() => {
+      void pollBridge();
+    }, 1200);
+
+    return () => {
+      isMounted = false;
+      clearInterval(intervalId);
+    };
+  }, [mergeRemoteOrders]);
+
+  // ── Background Simulated Runner (Vishnu Krishnan) ──────────────────────────
   useEffect(() => {
     if (!simulatorEnabled) return;
 
@@ -43,6 +79,8 @@ export function useSimulator() {
     const isRealRunnerActive =
       currentUser?.role === 'TASKBOY' ||
       (currentUser?.role === 'ADMIN' && adminMode === 'TASKBOY');
+
+    if (isRealRunnerActive) return;
 
     orders.forEach((order) => {
       // ── 1. Auto-place bid on PLACED order after 5-8s ───────────────────────
@@ -58,7 +96,6 @@ export function useSimulator() {
           const delay = 5000 + Math.random() * 2500; // 5 - 7.5s
           setTimeout(() => {
             activeTimers.current.delete(timerKey);
-            // Verify order is still in PLACED or BIDDING before bidding
             const currentOrder = useStore.getState().orders.find((o) => o.id === order.id);
             if (currentOrder && ['PLACED', 'BIDDING'].includes(currentOrder.status)) {
               const plausiblePrice = Math.round(
@@ -111,13 +148,14 @@ export function useSimulator() {
                 currentLatest.id === latestOffer.id &&
                 currentLatest.status === 'PENDING'
               ) {
-                // Find runner's previous price
                 const previousRunnerOffers = currentThread.offers.filter(
                   (o) => o.from === 'RUNNER',
                 );
                 const lastRunnerOffer =
                   previousRunnerOffers[previousRunnerOffers.length - 1];
-                const lastRunnerPrice = lastRunnerOffer ? lastRunnerOffer.price : latestOffer.price * 1.2;
+                const lastRunnerPrice = lastRunnerOffer
+                  ? lastRunnerOffer.price
+                  : latestOffer.price * 1.2;
 
                 const customerPrice = latestOffer.price;
 
@@ -163,15 +201,19 @@ export function useSimulator() {
               } else if (currentOrder.progressStep === 'ITEMS_PURCHASED_OR_COLLECTED') {
                 advanceProgress(currentOrder.id, 'ON_THE_WAY');
               } else if (currentOrder.progressStep === 'ON_THE_WAY') {
-                // Submit completion proof
-                const hasStoreBill = currentOrder.category === 'Store Purchases';
+                const hasStoreBill =
+                  currentOrder.requiresPurchase ||
+                  currentOrder.category === 'Store Purchases';
+                const funded = currentOrder.fundedPurchaseBudget ?? 0;
+                const simulatedBill =
+                  funded > 0 ? Math.max(50, funded - 60) : 220;
                 submitProof({
                   orderId: currentOrder.id,
                   completionPhotoUri: 'https://picsum.photos/seed/proof_sim/400/300',
                   billPhotoUri: hasStoreBill
                     ? 'https://picsum.photos/seed/bill_sim/400/300'
                     : undefined,
-                  storeBillAmount: hasStoreBill ? 220 : undefined,
+                  storeBillAmount: hasStoreBill ? simulatedBill : undefined,
                 });
               }
             }
@@ -198,16 +240,18 @@ export function skipSimulationAhead(orderId: string) {
     } else if (order.progressStep === 'ITEMS_PURCHASED_OR_COLLECTED') {
       state.advanceProgress(orderId, 'ON_THE_WAY');
     } else if (order.progressStep === 'ON_THE_WAY') {
-      const hasStoreBill = order.category === 'Store Purchases';
+      const hasStoreBill =
+        order.requiresPurchase || order.category === 'Store Purchases';
+      const funded = order.fundedPurchaseBudget ?? 0;
+      const simulatedBill = funded > 0 ? Math.max(50, funded - 60) : 250;
       state.submitProof({
         orderId,
         completionPhotoUri: 'https://picsum.photos/seed/proof_skip/400/300',
         billPhotoUri: hasStoreBill
           ? 'https://picsum.photos/seed/bill_skip/400/300'
           : undefined,
-        storeBillAmount: hasStoreBill ? 250 : undefined,
+        storeBillAmount: hasStoreBill ? simulatedBill : undefined,
       });
     }
   }
 }
-

@@ -1,42 +1,87 @@
-// ─── Pricing Helpers ──────────────────────────────────────────────────────────
-// Section 6 of SPEC.md.
-// Single configurable constant; all values round to whole ₹.
+// ─── Pricing & Purchase Budget Reconciliation Helper ─────────────────────────
+// Implements Section 3 of the TaskGo Omnichannel Specification:
+// 1. Service-fee advance = Math.round(agreedFee * 0.5)
+// 2. Remaining service fee (balanceFee) = agreedFee - advanceAmount
+// 3. Purchase budget portion = 100% of customer-approved max purchase budget funded upfront
+// 4. totalAdvancePayable = advanceAmount + approvedPurchaseBudget
+// 5. finalAdjustment = balanceFee + actualStoreBill - fundedPurchaseBudget
+// 6. unusedPurchaseRefund = Math.max(0, fundedPurchaseBudget - actualStoreBill)
 
-/** Percentage of the agreed fee charged as an advance (50%). */
-export const ADVANCE_PCT = 50;
+export interface PaymentCalculationResult {
+  /** 50% of agreed runner service fee */
+  advanceAmount: number;
+  /** Remaining 50% of agreed runner service fee */
+  balanceFee: number;
+  /** Customer-approved max purchase budget (0 for non-purchase errands) */
+  approvedPurchaseBudget: number;
+  /** Total upfront advance payable = advanceAmount + approvedPurchaseBudget */
+  totalAdvancePayable: number;
+  /** Purchase funds actually funded upfront (including any confirmed top-up) */
+  fundedPurchaseBudget: number;
+  /** Verified store receipt amount (0 if non-purchase) */
+  actualStoreBill: number;
+  /** Unused purchase funds to return/credit to customer */
+  unusedPurchaseRefund: number;
+  /** Extra top-up required if actualStoreBill > fundedPurchaseBudget */
+  extraPurchaseTopUpNeeded: number;
+  /** Net reconciliation: balanceFee + actualStoreBill - fundedPurchaseBudget */
+  finalAdjustment: number;
+  /** Final payment due from customer at settlement (remaining service fee + any unfunded bill) */
+  finalBalance: number;
+  /** Customer's net total spend across the errand (agreedFee + actualStoreBill) */
+  totalPayable: number;
+}
 
-/** Platform commission percentage (0% — runner keeps 100% of the fee). */
-export const PLATFORM_COMMISSION_PCT = 0;
+export function calcPayments(
+  agreedFee: number,
+  storeBillAmount: number = 0,
+  approvedPurchaseBudget: number = 0,
+  fundedPurchaseBudget?: number,
+): PaymentCalculationResult {
+  const safeFee = Math.max(0, Math.round(agreedFee || 0));
+  const safeBill = Math.max(0, Math.round(storeBillAmount || 0));
+  const safeApprovedBudget = Math.max(0, Math.round(approvedPurchaseBudget || 0));
 
-/**
- * Round a number to the nearest whole rupee.
- * Uses Math.round (standard rounding, not ceiling).
- */
-export const toRupees = (n: number): number => Math.round(n);
+  const advanceAmount = Math.round(safeFee * 0.5);
+  const balanceFee = safeFee - advanceAmount;
 
-/**
- * Calculate all derived payment amounts from the agreed fee and store bill.
- *
- * @param agreedFee       - locked service fee after negotiation (₹)
- * @param storeBillAmount - actual shop receipt amount fronted by runner (₹, 0 if none)
- */
-export function calcPayments(agreedFee: number, storeBillAmount = 0) {
-  const advanceAmount  = toRupees((agreedFee * ADVANCE_PCT) / 100);
-  const balanceFee     = agreedFee - advanceAmount;
-  const finalBalance   = balanceFee + storeBillAmount;
-  const totalPayable   = agreedFee + storeBillAmount;
+  const totalAdvancePayable = advanceAmount + safeApprovedBudget;
+
+  // If fundedPurchaseBudget is explicitly passed, use it; otherwise default to safeApprovedBudget
+  const effectiveFundedBudget =
+    fundedPurchaseBudget !== undefined
+      ? Math.max(0, Math.round(fundedPurchaseBudget))
+      : safeApprovedBudget;
+
+  const unusedPurchaseRefund = Math.max(0, effectiveFundedBudget - safeBill);
+  const extraPurchaseTopUpNeeded = Math.max(0, safeBill - effectiveFundedBudget);
+
+  // Spec formula: finalAdjustment = balanceFee + actualStoreBill - fundedPurchaseBudget
+  const finalAdjustment = balanceFee + safeBill - effectiveFundedBudget;
+
+  // When purchase budget was funded upfront (effectiveFundedBudget > 0):
+  // - Remaining service fee due is balanceFee (plus any unfunded bill if not yet topped up)
+  // - Unused purchase budget is recorded & refunded/credited separately
+  // When no purchase budget was funded upfront (legacy/non-purchase order with a bill):
+  // - finalBalance includes balanceFee + safeBill
+  const finalBalance =
+    effectiveFundedBudget > 0
+      ? balanceFee + extraPurchaseTopUpNeeded
+      : balanceFee + safeBill;
+
+  const totalPayable = safeFee + safeBill;
 
   return {
     advanceAmount,
     balanceFee,
+    approvedPurchaseBudget: safeApprovedBudget,
+    totalAdvancePayable,
+    fundedPurchaseBudget: effectiveFundedBudget,
+    actualStoreBill: safeBill,
+    unusedPurchaseRefund,
+    extraPurchaseTopUpNeeded,
+    finalAdjustment,
     finalBalance,
     totalPayable,
   };
 }
-
-/**
- * Quick helper: just the advance amount.
- */
-export const calcAdvance = (agreedFee: number): number =>
-  toRupees((agreedFee * ADVANCE_PCT) / 100);
-
