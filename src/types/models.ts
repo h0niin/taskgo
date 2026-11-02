@@ -85,12 +85,16 @@ export interface ErrandOrder {
   category: string;
   stops: LocationStop[];
   edgeCaseInstructions: string;
+  itemsSummary?: string;
   /** Optional reference photos attached when the errand was posted. */
   attachments?: string[];
   status: OrderStatus;
   progressStep?: ProgressStep;
   distanceKm: number;
   createdAt: string; // ISO 8601
+  updatedAt?: string;
+  sourceChannel?: 'APP' | 'WHATSAPP' | 'ADMIN';
+  assignmentMode?: 'BIDDING' | 'ADMIN_FIXED';
 
   // Bidding
   threads: BidThread[];

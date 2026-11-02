@@ -35,10 +35,12 @@ interface AppState {
   currentUser: User | null;
   adminMode: AdminMode;          // only relevant when role === 'ADMIN'
   simulatorEnabled: boolean;     // admin-only toggle
+  bridgeConnected: boolean;
 
   // ── Data ──────────────────────────────────────────────────────────────────
   users: User[];
   orders: ErrandOrder[];
+  mergeRemoteOrders: (remoteOrders: ErrandOrder[], connected?: boolean) => void;
 
   // ── Auth actions ──────────────────────────────────────────────────────────
   login: (email: string, password: string) => User | null;
@@ -138,8 +140,39 @@ export const useStore = create<AppState>((set, get) => ({
   currentUser: null,
   adminMode: 'CUSTOMER',
   simulatorEnabled: false,
+  bridgeConnected: false,
   users: SEED_USERS,
   orders: [],
+
+  mergeRemoteOrders(remoteOrders, connected = true) {
+    set((state) => {
+      if (!Array.isArray(remoteOrders)) return { bridgeConnected: connected };
+      const merged = new Map(state.orders.map((order) => [order.id, order]));
+      let changed = state.bridgeConnected !== connected;
+      for (const remote of remoteOrders) {
+        if (!remote || typeof remote.id !== 'string') continue;
+        const local = merged.get(remote.id);
+        if (!local) {
+          merged.set(remote.id, remote);
+          changed = true;
+          continue;
+        }
+        const remoteTime = Date.parse(remote.updatedAt || remote.createdAt || '') || 0;
+        const localTime = Date.parse(local.updatedAt || local.createdAt || '') || 0;
+        if (JSON.stringify(local) !== JSON.stringify(remote) && remoteTime >= localTime) {
+          merged.set(remote.id, remote);
+          changed = true;
+        }
+      }
+      if (!changed) return state;
+      return {
+        orders: [...merged.values()].sort(
+          (a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt),
+        ),
+        bridgeConnected: connected,
+      };
+    });
+  },
 
   // ── Auth ───────────────────────────────────────────────────────────────────
   login(email, password) {
@@ -186,6 +219,8 @@ export const useStore = create<AppState>((set, get) => ({
       status: 'PLACED',
       distanceKm,
       createdAt: iso(),
+      updatedAt: iso(),
+      sourceChannel: 'APP',
       threads: [],
       payments: [],
     };
@@ -517,7 +552,7 @@ export const useStore = create<AppState>((set, get) => ({
       orders: s.orders.map((o) => {
         if (o.id !== orderId) return o;
         if (!['ASSIGNED', 'IN_PROGRESS'].includes(o.status)) return o;
-        return { ...o, status: 'IN_PROGRESS', progressStep: step };
+        return { ...o, status: 'IN_PROGRESS', progressStep: step, updatedAt: iso() };
       }),
     }));
   },
@@ -534,6 +569,7 @@ export const useStore = create<AppState>((set, get) => ({
         return {
           ...o,
           status: 'PROOF_SUBMITTED',
+          updatedAt: iso(),
           completionPhotoUri,
           additionalCostPhotoUri: costs > 0 ? additionalCostPhotoUri : undefined,
           additionalCosts: costs,
