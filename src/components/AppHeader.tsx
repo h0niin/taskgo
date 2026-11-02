@@ -29,7 +29,7 @@ const ROLE_COLORS: Record<string, string> = {
 const ROLE_LABELS: Record<string, string> = {
   CUSTOMER: 'Customer',
   TASKER:  'Tasker',
-  ADMIN:    'Admin',
+  ADMIN:    'Dual',
 };
 
 export function AppHeader() {
@@ -41,7 +41,7 @@ export function AppHeader() {
 
   if (!currentUser) return null;
 
-  const isAdmin = currentUser.role === 'ADMIN';
+  const isAdmin = currentUser.role === 'DUAL';
 
   return (
     <View

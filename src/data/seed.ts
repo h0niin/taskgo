@@ -34,11 +34,11 @@ export const SEED_USERS: User[] = [
     phone: '9567891234',
   },
   {
-    id: 'u_admin_1',
+    id: 'u_dual_1',
     name: 'Priya Nair',
-    email: 'admin@taskgo.in',
-    password: 'admin123',
-    role: 'ADMIN',
+    email: 'dual@taskgo.in',
+    password: 'dual123',
+    role: 'DUAL',
     phone: '9447112233',
   },
   // Extra runner personas for competing bids / simulator

@@ -242,7 +242,7 @@ export function LoginScreen() {
               {/* Admin chip */}
               <TouchableOpacity
                 activeOpacity={0.8}
-                onPress={() => handleQuickLogin('admin@taskgo.in', 'admin123')}
+                onPress={() => handleQuickLogin('dual@taskgo.in', 'dual123')}
                 style={{
                   backgroundColor: '#FCE7F3',
                   borderWidth: 3,
@@ -256,7 +256,7 @@ export function LoginScreen() {
                 }}
               >
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                  <BrutalBadge label="Admin" color="#EC4899" />
+                  <BrutalBadge label="Dual" color="#EC4899" />
                   <Text style={{ fontWeight: '900', fontSize: 13, color: Neutral.black }}>
                     Priya Nair (Dual Mode)
                   </Text>

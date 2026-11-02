@@ -21,7 +21,7 @@ export function RootNavigator() {
   // Determine which side of the app to render with navigation-level gating
   const isCustomerInterface =
     currentUser.role === 'CUSTOMER' ||
-    (currentUser.role === 'ADMIN' && adminMode === 'CUSTOMER');
+    (currentUser.role === 'DUAL' && adminMode === 'CUSTOMER');
 
   return (
     <View style={{ flex: 1 }}>

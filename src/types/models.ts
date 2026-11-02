@@ -1,7 +1,7 @@
 // ─── Data Models ─────────────────────────────────────────────────────────────
 // Mirrors Section 10 of SPEC.md exactly.
 
-export type UserRole = 'CUSTOMER' | 'TASKER' | 'ADMIN';
+export type UserRole = 'CUSTOMER' | 'TASKER' | 'DUAL';
 
 export interface User {
   id: string;

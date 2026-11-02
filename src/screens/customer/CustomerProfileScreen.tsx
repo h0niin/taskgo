@@ -71,12 +71,12 @@ export function CustomerProfileScreen({ navigation }: any) {
       </BrutalCard>
 
       {/* Admin Simulator Switch (Section 12 of SPEC) */}
-      {currentUser?.role === 'ADMIN' && (
+      {currentUser?.role === 'DUAL' && (
         <BrutalCard backgroundColor={Card.lavender}>
           <View style={{ padding: 18, gap: 12 }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
               <Text style={{ fontWeight: '900', fontSize: 14, textTransform: 'uppercase' }}>
-                ⚡ Admin Simulator
+                ⚡ Dual Simulator
               </Text>
               <BrutalBadge
                 label={simulatorEnabled ? 'ENABLED' : 'DISABLED'}

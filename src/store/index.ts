@@ -204,7 +204,7 @@ export const useStore = create<AppState>((set, get) => ({
 
     // When admin is acting as customer, use the demo customer id
     const customerId =
-      currentUser?.role === 'ADMIN'
+      currentUser?.role === 'DUAL'
         ? 'u_cust_1'
         : currentUser?.id ?? 'u_cust_1';
 
@@ -656,7 +656,7 @@ export const effectiveCustomerId = (
   adminMode: AdminMode,
 ): string => {
   if (!user) return '';
-  if (user.role === 'ADMIN') return adminMode === 'CUSTOMER' ? 'u_cust_1' : 'u_run_1';
+  if (user.role === 'DUAL') return adminMode === 'CUSTOMER' ? 'u_cust_1' : 'u_run_1';
   return user.id;
 };
 
@@ -666,7 +666,7 @@ export const effectiveRunnerId = (
   adminMode: AdminMode,
 ): string => {
   if (!user) return '';
-  if (user.role === 'ADMIN') return adminMode === 'TASKER' ? 'u_run_1' : '';
+  if (user.role === 'DUAL') return adminMode === 'TASKER' ? 'u_run_1' : '';
   return user.role === 'TASKER' ? user.id : '';
 };
 
