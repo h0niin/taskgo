@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { RefreshControl, ScrollView, Switch, Text, TouchableOpacity, View } from 'react-native';
 import {
   BrutalBadge,
@@ -11,7 +11,7 @@ import { Canvas, Card, CTA, Neutral } from '../../theme';
 import { effectiveRunnerId, selectRunnerFeed, useStore } from '../../store';
 import { formatDistance, humanizeStatus } from '../../utils/format';
 import type { ErrandOrder } from '../../types/models';
-import { Bike, Navigation, MapPin } from 'lucide-react-native';
+import { sendRunnerHeartbeat } from '../../utils/adminBridge';
 
 export function RunnerFeedScreen({ navigation }: any) {
   const [online, setOnline] = useState(true);
@@ -34,6 +34,23 @@ export function RunnerFeedScreen({ navigation }: any) {
 
   const runnerId = effectiveRunnerId(currentUser, adminMode) || 'u_run_1';
   const runnerName = currentUser?.role === 'TASKBOY' ? currentUser.name : 'Rahul Das';
+  const onlineRef = useRef(online);
+
+  useEffect(() => {
+    void sendRunnerHeartbeat(runnerId, onlineRef.current);
+    const heartbeat = setInterval(() => {
+      void sendRunnerHeartbeat(runnerId, onlineRef.current);
+    }, 20_000);
+    return () => {
+      clearInterval(heartbeat);
+      void sendRunnerHeartbeat(runnerId, false);
+    };
+  }, [runnerId]);
+
+  useEffect(() => {
+    onlineRef.current = online;
+    void sendRunnerHeartbeat(runnerId, online);
+  }, [runnerId, online]);
 
   const feedOrders = selectRunnerFeed(orders).filter((order) => {
     const thread = order.threads.find((t) => t.runnerId === runnerId);
@@ -223,7 +240,7 @@ export function RunnerFeedScreen({ navigation }: any) {
                         }}
                         numberOfLines={2}
                       >
-                        "{order.edgeCaseInstructions}"
+                        {order.edgeCaseInstructions}
                       </Text>
                     </View>
 

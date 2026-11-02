@@ -5,7 +5,8 @@
 
 import { useEffect, useRef } from 'react';
 import { useStore } from '../store';
-import type { ErrandOrder, Offer } from '../types/models';
+import { getAdminServerUrl } from '../utils/adminBridge';
+import type { ErrandOrder } from '../types/models';
 
 const SIMULATED_RUNNER_ID = 'u_run_2';
 const SIMULATED_RUNNER_NAME = 'Vishnu Krishnan';
@@ -34,6 +35,65 @@ export function useSimulator() {
 
   // Track timer IDs to avoid duplicate execution
   const activeTimers = useRef<Set<string>>(new Set());
+
+  // Keep the mobile app and local operations dashboard on a shared live order list.
+  useEffect(() => {
+    let active = true;
+    let pushTimer: ReturnType<typeof setTimeout> | undefined;
+    const baseUrl = getAdminServerUrl();
+    const lastSent = new Map<string, string>();
+
+    const pushChangedOrders = (currentOrders: ErrandOrder[]) => {
+      const changed = currentOrders.filter((order) => {
+        const snapshot = JSON.stringify(order);
+        return lastSent.get(order.id) !== snapshot;
+      }).map((order) => ({
+        ...order,
+        updatedAt: new Date().toISOString(),
+      }));
+      if (!changed.length) return;
+      if (pushTimer) clearTimeout(pushTimer);
+      pushTimer = setTimeout(() => {
+        void fetch(`${baseUrl}/api/orders/sync`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ orders: changed }),
+        }).then((response) => {
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          for (const order of changed) lastSent.set(order.id, JSON.stringify(order));
+        }).catch(() => {
+          if (active) useStore.setState({ bridgeConnected: false });
+          if (active) {
+            pushTimer = setTimeout(() => pushChangedOrders(useStore.getState().orders), 2000);
+          }
+        });
+      }, 120);
+    };
+
+    const unsubscribe = useStore.subscribe((state) => pushChangedOrders(state.orders));
+
+    const poll = async () => {
+      try {
+        const response = await fetch(`${baseUrl}/api/orders`);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = (await response.json()) as { orders?: ErrandOrder[] };
+        if (active && Array.isArray(data.orders)) {
+          useStore.getState().mergeRemoteOrders(data.orders, true);
+        }
+      } catch {
+        if (active) useStore.setState({ bridgeConnected: false });
+      }
+    };
+
+    void poll();
+    const pollTimer = setInterval(() => void poll(), 2000);
+    return () => {
+      active = false;
+      unsubscribe();
+      clearInterval(pollTimer);
+      if (pushTimer) clearTimeout(pushTimer);
+    };
+  }, []);
 
   useEffect(() => {
     if (!simulatorEnabled) return;

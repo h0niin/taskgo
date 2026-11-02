@@ -32,6 +32,7 @@ yarn-error.*
 
 # local env files
 .env*.local
+.taskgo-admin-orders.json
 
 # typescript
 *.tsbuildinfo
