@@ -23,13 +23,13 @@ import type { AdminMode } from '../types/models';
 const ROLE_COLORS: Record<string, string> = {
   CUSTOMER: '#8B5CF6',
   TASKER:  '#F97316',
-  ADMIN:    '#EC4899',
+  DUAL:    '#EC4899',
 };
 
 const ROLE_LABELS: Record<string, string> = {
   CUSTOMER: 'Customer',
   TASKER:  'Tasker',
-  ADMIN:    'Dual',
+  DUAL:    'Dual',
 };
 
 export function AppHeader() {
@@ -190,4 +190,3 @@ function ToggleSegment({ label, active, activeColor, onPress }: ToggleSegmentPro
     </Pressable>
   );
 }
-

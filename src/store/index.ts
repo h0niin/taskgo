@@ -32,7 +32,7 @@ const cloneOrder = (o: ErrandOrder): ErrandOrder =>
 interface AppState {
   // ── Auth ──────────────────────────────────────────────────────────────────
   currentUser: User | null;
-  adminMode: AdminMode;          // only relevant when role === 'ADMIN'
+  adminMode: AdminMode;          // only relevant when role === 'DUAL'
   simulatorEnabled: boolean;     // admin-only toggle
   bridgeConnected: boolean;
 
