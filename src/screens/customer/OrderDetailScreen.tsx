@@ -326,6 +326,8 @@ export function OrderDetailScreen({ route, navigation }: any) {
                     const latestOffer = thread.offers[thread.offers.length - 1];
                     const price = latestOffer?.price ?? 0;
                     const note = latestOffer?.note ?? 'Ready to run errand';
+                    const isInactive =
+                      thread.status === 'REJECTED' || thread.status === 'WITHDRAWN';
 
                     return (
                       <TouchableOpacity
@@ -340,12 +342,13 @@ export function OrderDetailScreen({ route, navigation }: any) {
                       >
                         <View
                           style={{
-                            backgroundColor: '#FFFFFF',
+                            backgroundColor: isInactive ? '#E5E7EB' : '#FFFFFF',
                             borderWidth: 3,
                             borderColor: Neutral.black,
                             borderRadius: 14,
                             padding: 14,
                             gap: 8,
+                            opacity: isInactive ? 0.85 : 1,
                           }}
                         >
                           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -359,6 +362,14 @@ export function OrderDetailScreen({ route, navigation }: any) {
                               {formatRupees(price)}
                             </Text>
                           </View>
+
+                          {isInactive ? (
+                            <BrutalBadge
+                              label={humanizeStatus(thread.status)}
+                              color={thread.status === 'REJECTED' ? '#EF4444' : '#6B7280'}
+                              style={{ alignSelf: 'flex-start' }}
+                            />
+                          ) : null}
 
                           <Text
                             style={{
@@ -385,8 +396,14 @@ export function OrderDetailScreen({ route, navigation }: any) {
                             <Text style={{ fontWeight: '700', fontSize: 11, color: '#6B7280' }}>
                               {thread.offers.length} message{thread.offers.length > 1 ? 's' : ''} in thread
                             </Text>
-                            <Text style={{ fontWeight: '900', fontSize: 12, color: '#8B5CF6' }}>
-                              Open Negotiation →
+                            <Text
+                              style={{
+                                fontWeight: '900',
+                                fontSize: 12,
+                                color: isInactive ? '#6B7280' : '#8B5CF6',
+                              }}
+                            >
+                              View Thread →
                             </Text>
                           </View>
                         </View>
