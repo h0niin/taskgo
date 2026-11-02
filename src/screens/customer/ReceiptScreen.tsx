@@ -52,8 +52,10 @@ export function ReceiptScreen({ route, navigation }: any) {
 
   const agreedFee = order.agreedFee ?? 0;
   const additionalCosts = order.additionalCosts ?? 0;
+  const PLATFORM_FEE = 60;
   const totalPaid =
-    order.payments.reduce((sum, p) => sum + p.amount, 0) || agreedFee + additionalCosts;
+    (order.payments.reduce((sum, p) => sum + p.amount, 0) || agreedFee + additionalCosts) +
+    PLATFORM_FEE;
 
   const handleSaveRating = () => {
     rateOrder(orderId, rating, review.trim());
@@ -208,6 +210,11 @@ export function ReceiptScreen({ route, navigation }: any) {
               <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                 <Text style={{ fontWeight: '700', fontSize: 13 }}>Agreed Service Fee:</Text>
                 <Text style={{ fontWeight: '900', fontSize: 13 }}>{formatRupees(agreedFee)}</Text>
+              </View>
+
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                <Text style={{ fontWeight: '700', fontSize: 13 }}>Platform Fee:</Text>
+                <Text style={{ fontWeight: '900', fontSize: 13 }}>{formatRupees(PLATFORM_FEE)}</Text>
               </View>
 
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>

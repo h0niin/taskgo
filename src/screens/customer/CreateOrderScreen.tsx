@@ -72,6 +72,8 @@ export function CreateOrderScreen({ navigation }: any) {
 
   // Multiline special instructions
   const [instructions, setInstructions] = useState('');
+  const [loadWeightKg, setLoadWeightKg] = useState('');
+  const [estHours, setEstHours] = useState('');
   const [attachments, setAttachments] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
 
@@ -98,13 +100,15 @@ export function CreateOrderScreen({ navigation }: any) {
       }
       result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ['images'],
-        allowsEditing: true,
+        allowsMultipleSelection: true,
+        selectionLimit: MAX_ATTACHMENTS - attachments.length,
         quality: 0.7,
       });
     }
 
-    if (!result.canceled && result.assets?.[0]) {
-      setAttachments((prev) => [...prev, result.assets[0].uri]);
+    const uris = result.assets?.map((asset) => asset.uri) ?? [];
+    if (!result.canceled && uris.length > 0) {
+      setAttachments((prev) => [...prev, ...uris].slice(0, MAX_ATTACHMENTS));
       setError(null);
     }
   };
@@ -208,6 +212,8 @@ export function CreateOrderScreen({ navigation }: any) {
       edgeCaseInstructions: instructions.trim(),
       attachments,
       distanceKm: Math.round((2.0 + stops.length * 1.2) * 10) / 10,
+      loadWeightKg: loadWeightKg.trim() ? parseFloat(loadWeightKg) : undefined,
+      estHours: estHours.trim() ? parseFloat(estHours) : undefined,
     });
 
     // Reset and navigate to order detail or dashboard
@@ -479,6 +485,36 @@ export function CreateOrderScreen({ navigation }: any) {
               textAlignVertical: 'top',
             }}
           />
+        </View>
+      </BrutalCard>
+
+      {/* Load Weight & Estimated Time */}
+      <BrutalCard backgroundColor={Card.cream}>
+        <View style={{ padding: 18, gap: 10 }}>
+          <Text style={{ fontWeight: '900', fontSize: 14, textTransform: 'uppercase' }}>
+            Load & Time Estimate (Optional)
+          </Text>
+          <Text style={{ fontWeight: '700', fontSize: 12, color: '#4B5563' }}>
+            Helps Task Boys price the errand fairly.
+          </Text>
+          <View style={{ flexDirection: 'row', gap: 10 }}>
+            <BrutalInput
+              label="Load Weight (kg)"
+              placeholder="e.g. 5"
+              value={loadWeightKg}
+              onChangeText={setLoadWeightKg}
+              keyboardType="numeric"
+              style={{ flex: 1 }}
+            />
+            <BrutalInput
+              label="Est. Time (hours)"
+              placeholder="e.g. 1"
+              value={estHours}
+              onChangeText={setEstHours}
+              keyboardType="numeric"
+              style={{ flex: 1 }}
+            />
+          </View>
         </View>
       </BrutalCard>
 

@@ -1,4 +1,4 @@
-// ─── Zustand Store ────────────────────────────────────────────────────────────
+// ─── Zustand Store ───────────────────────────────────────────────────────────
 // Single store for the entire TaskGo demo app.
 // All state transitions validate the current status before mutating.
 // Section 0 rule: no backend — all in-memory.
@@ -13,7 +13,6 @@ import type {
   Offer,
   OrderStatus,
   Payment,
-  ProgressStep,
   User,
 } from '../types/models';
 
@@ -46,13 +45,15 @@ interface AppState {
   setAdminMode: (mode: AdminMode) => void;
   toggleSimulator: () => void;
 
-  // ── Order actions — customer ──────────────────────────────────────────────
+  // ── Create order ─────────────────────────────────────────────────────────
   createOrder: (params: {
     category: string;
     stops: Omit<LocationStop, 'id'>[];
     edgeCaseInstructions: string;
     attachments?: string[];
     distanceKm?: number;
+    loadWeightKg?: number;
+    estHours?: number;
   }) => ErrandOrder;
 
   cancelOrder: (orderId: string) => void;
@@ -84,7 +85,7 @@ interface AppState {
 
   customerRejectOffer: (orderId: string, threadId: string) => void;
 
-  // ── Order actions — runner ────────────────────────────────────────────────
+  // ── Order actions — runner ───────────────────────────────────────────────
   placeBid: (
     orderId: string,
     runnerId: string,
@@ -114,7 +115,8 @@ interface AppState {
 
   runnerRejectCounter: (orderId: string, threadId: string) => void;
 
-  advanceProgress: (orderId: string, step: ProgressStep) => void;
+  /** Runner begins the errand. */
+  startOrder: (orderId: string) => void;
 
   submitProof: (params: {
     orderId: string;
@@ -124,9 +126,6 @@ interface AppState {
   }) => void;
 
   // ── Utility ───────────────────────────────────────────────────────────────
-  /** Expire a pending offer (called by simulator / countdown timer). */
-  expireOffer: (orderId: string, threadId: string, offerId: string) => void;
-
   /** Internal helper used by the simulator. */
   _getOrder: (orderId: string) => ErrandOrder | undefined;
 }
@@ -141,7 +140,7 @@ export const useStore = create<AppState>((set, get) => ({
   users: SEED_USERS,
   orders: [],
 
-  // ── Auth ───────────────────────────────────────────────────────────────────
+  // ── Auth ────────────────────────────────────────────────────────────────────
   login(email, password) {
     const user = get().users.find(
       (u) =>
@@ -166,8 +165,8 @@ export const useStore = create<AppState>((set, get) => ({
     set((s) => ({ simulatorEnabled: !s.simulatorEnabled }));
   },
 
-  // ── Create order ───────────────────────────────────────────────────────────
-  createOrder({ category, stops, edgeCaseInstructions, attachments, distanceKm = 2.0 }) {
+  // ── Create order ─────────────────────────────────────────────────────────
+  createOrder({ category, stops, edgeCaseInstructions, attachments, distanceKm = 2.0, loadWeightKg, estHours }) {
     const { currentUser, adminMode, orders } = get();
 
     // When admin is acting as customer, use the demo customer id
@@ -175,6 +174,15 @@ export const useStore = create<AppState>((set, get) => ({
       currentUser?.role === 'ADMIN'
         ? 'u_cust_1'
         : currentUser?.id ?? 'u_cust_1';
+
+    // Base price calculation using adjusted formula:
+    // basePrice = max(80, min(distanceKm, 8) * 20 + 50 + weightKg * 5 + estHours * 80)
+    const MAX_DISTANCE_KM = 8;
+    const effectiveDist = Math.min(distanceKm, MAX_DISTANCE_KM);
+    const distanceComponent = effectiveDist * 20 + 50; // ₹20/km + ₹50 flat
+    const weightComponent = (loadWeightKg ?? 0) * 5; // ₹5 per kg
+    const timeComponent = (estHours ?? 0) * 80; // ₹80 per hour
+    const basePrice = Math.max(80, distanceComponent + weightComponent + timeComponent);
 
     const newOrder: ErrandOrder = {
       id: uid('ord'),
@@ -186,6 +194,7 @@ export const useStore = create<AppState>((set, get) => ({
       status: 'PLACED',
       distanceKm,
       createdAt: iso(),
+      basePrice, // set bid floor
       threads: [],
       payments: [],
     };
@@ -194,7 +203,6 @@ export const useStore = create<AppState>((set, get) => ({
     return newOrder;
   },
 
-  // ── Cancel order (SPEC Section 4: pre-assigned free, post-assigned forfeited)
   cancelOrder(orderId) {
     set((s) => ({
       orders: s.orders.map((o) => {
@@ -205,7 +213,6 @@ export const useStore = create<AppState>((set, get) => ({
     }));
   },
 
-  // ── Accept bid ─────────────────────────────────────────────────────────────
   acceptBid(orderId, threadId) {
     set((s) => ({
       orders: s.orders.map((o) => {
@@ -245,8 +252,11 @@ export const useStore = create<AppState>((set, get) => ({
     }));
   },
 
-  // ── Customer counter ───────────────────────────────────────────────────────
   customerCounter(orderId, threadId, price, note) {
+    const state = get();
+    const order = state.orders.find((o) => o.id === orderId);
+    if (!order || !order.basePrice || price < order.basePrice) return;
+
     set((s) => ({
       orders: s.orders.map((o) => {
         if (o.id !== orderId) return o;
@@ -254,11 +264,9 @@ export const useStore = create<AppState>((set, get) => ({
           ...o,
           threads: o.threads.map((t) => {
             if (t.id !== threadId) return t;
-            // Mark latest offer as COUNTERED
             const updatedOffers: Offer[] = t.offers.map((of, i) =>
               i === t.offers.length - 1 ? { ...of, status: 'COUNTERED' } : of,
             );
-            // Add the new counter offer
             const newOffer: Offer = {
               id: uid('off'),
               threadId,
@@ -275,7 +283,6 @@ export const useStore = create<AppState>((set, get) => ({
     }));
   },
 
-  // ── Customer reject ────────────────────────────────────────────────────────
   customerRejectOffer(orderId, threadId) {
     set((s) => ({
       orders: s.orders.map((o) => {
@@ -297,11 +304,14 @@ export const useStore = create<AppState>((set, get) => ({
     }));
   },
 
-  // ── Place bid ──────────────────────────────────────────────────────────────
   placeBid(orderId, runnerId, runnerName, price, note) {
+    const state = get();
+    const order = state.orders.find((o) => o.id === orderId);
+    if (!order || !order.basePrice || price < order.basePrice) return null as any;
+
     const newOffer: Offer = {
       id: uid('off'),
-      threadId: '', // filled below
+      threadId: '',
       from: 'RUNNER',
       price,
       note,
@@ -334,8 +344,11 @@ export const useStore = create<AppState>((set, get) => ({
     return newThread;
   },
 
-  // ── Edit bid (SPEC Section 5.6: before customer response) ─────────────────
   editBid(orderId, threadId, price, note) {
+    const state = get();
+    const order = state.orders.find((o) => o.id === orderId);
+    if (!order || !order.basePrice || price < order.basePrice) return;
+
     set((s) => ({
       orders: s.orders.map((o) => {
         if (o.id !== orderId) return o;
@@ -343,7 +356,6 @@ export const useStore = create<AppState>((set, get) => ({
           ...o,
           threads: o.threads.map((t) => {
             if (t.id !== threadId) return t;
-            // Can only edit before customer has responded
             const hasCustomerResponse = t.offers.some((of) => of.from === 'CUSTOMER');
             if (hasCustomerResponse || t.offers.length === 0) return t;
 
@@ -361,7 +373,6 @@ export const useStore = create<AppState>((set, get) => ({
     }));
   },
 
-  // ── Withdraw bid ───────────────────────────────────────────────────────────
   withdrawBid(orderId, threadId) {
     set((s) => ({
       orders: s.orders.map((o) => {
@@ -370,7 +381,6 @@ export const useStore = create<AppState>((set, get) => ({
           ...o,
           threads: o.threads.map((t) => {
             if (t.id !== threadId) return t;
-            // Can only withdraw before customer has responded
             const hasCustomerResponse = t.offers.some(
               (of) => of.from === 'CUSTOMER',
             );
@@ -400,8 +410,11 @@ export const useStore = create<AppState>((set, get) => ({
     }));
   },
 
-  // ── Runner counter ─────────────────────────────────────────────────────────
   runnerCounter(orderId, threadId, price, note) {
+    const state = get();
+    const order = state.orders.find((o) => o.id === orderId);
+    if (!order || !order.basePrice || price < order.basePrice) return;
+
     set((s) => ({
       orders: s.orders.map((o) => {
         if (o.id !== orderId) return o;
@@ -428,7 +441,6 @@ export const useStore = create<AppState>((set, get) => ({
     }));
   },
 
-  // ── Runner accepts a customer counter ──────────────────────────────────────
   runnerAcceptCounter(orderId, threadId) {
     set((s) => ({
       orders: s.orders.map((o) => {
@@ -465,7 +477,6 @@ export const useStore = create<AppState>((set, get) => ({
     }));
   },
 
-  // ── Runner rejects a customer counter ──────────────────────────────────────
   runnerRejectCounter(orderId, threadId) {
     set((s) => ({
       orders: s.orders.map((o) => {
@@ -487,7 +498,35 @@ export const useStore = create<AppState>((set, get) => ({
     }));
   },
 
-  // ── Pay full task fee ──────────────────────────────────────────────────────
+  startOrder(orderId) {
+    set((s) => ({
+      orders: s.orders.map((o) => {
+        if (o.id !== orderId) return o;
+        if (!['ASSIGNED', 'IN_PROGRESS'].includes(o.status)) return o;
+        return { ...o, status: 'IN_PROGRESS' };
+      }),
+    }));
+  },
+
+  submitProof({ orderId, completionPhotoUri, additionalCostPhotoUri, additionalCosts }) {
+    set((s) => ({
+      orders: s.orders.map((o) => {
+        if (o.id !== orderId) return o;
+        if (!['ASSIGNED', 'IN_PROGRESS'].includes(o.status)) return o;
+
+        const costs = Math.max(0, Math.round(additionalCosts ?? 0));
+
+        return {
+          ...o,
+          status: 'PROOF_SUBMITTED',
+          completionPhotoUri,
+          additionalCostPhotoUri: costs > 0 ? additionalCostPhotoUri : undefined,
+          additionalCosts: costs,
+        };
+      }),
+    }));
+  },
+
   payTaskFee(orderId, upiRef) {
     set((s) => ({
       orders: s.orders.map((o) => {
@@ -511,38 +550,6 @@ export const useStore = create<AppState>((set, get) => ({
     }));
   },
 
-  // ── Advance progress (runner) ──────────────────────────────────────────────
-  advanceProgress(orderId, step) {
-    set((s) => ({
-      orders: s.orders.map((o) => {
-        if (o.id !== orderId) return o;
-        if (!['ASSIGNED', 'IN_PROGRESS'].includes(o.status)) return o;
-        return { ...o, status: 'IN_PROGRESS', progressStep: step };
-      }),
-    }));
-  },
-
-  // ── Submit proof ───────────────────────────────────────────────────────────
-  submitProof({ orderId, completionPhotoUri, additionalCostPhotoUri, additionalCosts }) {
-    set((s) => ({
-      orders: s.orders.map((o) => {
-        if (o.id !== orderId) return o;
-        if (o.status !== 'IN_PROGRESS') return o;
-
-        const costs = Math.max(0, Math.round(additionalCosts ?? 0));
-
-        return {
-          ...o,
-          status: 'PROOF_SUBMITTED',
-          completionPhotoUri,
-          additionalCostPhotoUri: costs > 0 ? additionalCostPhotoUri : undefined,
-          additionalCosts: costs,
-        };
-      }),
-    }));
-  },
-
-  // ── Approve proof ──────────────────────────────────────────────────────────
   approveProof(orderId) {
     set((s) => ({
       orders: s.orders.map((o) => {
@@ -559,7 +566,6 @@ export const useStore = create<AppState>((set, get) => ({
     }));
   },
 
-  // ── Raise issue ────────────────────────────────────────────────────────────
   raiseIssue(orderId) {
     set((s) => ({
       orders: s.orders.map((o) =>
@@ -568,7 +574,6 @@ export const useStore = create<AppState>((set, get) => ({
     }));
   },
 
-  // ── Pay additional costs ───────────────────────────────────────────────────
   payAdditionalCosts(orderId, upiRef) {
     set((s) => ({
       orders: s.orders.map((o) => {
@@ -592,7 +597,6 @@ export const useStore = create<AppState>((set, get) => ({
     }));
   },
 
-  // ── Rate order ────────────────────────────────────────────────────────────
   rateOrder(orderId, rating, review) {
     set((s) => ({
       orders: s.orders.map((o) =>
@@ -603,12 +607,6 @@ export const useStore = create<AppState>((set, get) => ({
     }));
   },
 
-  // ── Expire offer ──────────────────────────────────────────────────────────
-  expireOffer() {
-    // timer disabled — no-op
-  },
-
-  // ── Internal helper ───────────────────────────────────────────────────────
   _getOrder(orderId) {
     return get().orders.find((o) => o.id === orderId);
   },

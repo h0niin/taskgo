@@ -144,13 +144,13 @@ export function CustomerDashboardScreen({ navigation }: any) {
                       height: '100%',
                       backgroundColor: Neutral.black,
                       width:
-                        activeOrder.status === 'PROOF_SUBMITTED'
-                          ? '85%'
-                          : activeOrder.status === 'AWAITING_ADDITIONAL_PAYMENT'
+                        activeOrder.status === 'AWAITING_ADDITIONAL_PAYMENT'
                           ? '95%'
-                          : activeOrder.progressStep === 'ON_THE_WAY'
+                          : activeOrder.status === 'PROOF_SUBMITTED'
+                          ? '85%'
+                          : activeOrder.status === 'IN_PROGRESS'
                           ? '65%'
-                          : activeOrder.progressStep === 'ITEMS_PURCHASED_OR_COLLECTED'
+                          : activeOrder.status === 'ASSIGNED'
                           ? '45%'
                           : '25%',
                     }}

@@ -422,7 +422,7 @@ export function RunnerBidSheet({
               <Text style={{ fontWeight: '900', fontSize: 14, textTransform: 'uppercase' }}>
                 Submit Your Fee Quote
               </Text>
-              <BrutalBadge label="NO BASE PRICE" color="#8B5CF6" />
+              <BrutalBadge label={order.basePrice ? `${formatRupees(order.basePrice)} (min)` : 'NO BASE PRICE'} color={order.basePrice ? '#10B981' : '#8B5CF6'} />
             </View>
 
             <View style={{ gap: 4 }}>
@@ -447,6 +447,7 @@ export function RunnerBidSheet({
         visible={priceModalVisible}
         amount={price}
         note={note}
+        minAmount={order.basePrice ?? 60}
         title={existingThread ? 'Edit Bid Amount & Note' : 'Enter Bid & Place It'}
         submitLabel={existingThread ? 'Use Amount & Note' : 'Place Bid'}
         onCancel={() => setPriceModalVisible(false)}

@@ -29,7 +29,7 @@ import {
   formatRupees,
   humanizeStatus,
 } from '../../utils/format';
-import type { ErrandOrder, OrderStatus, ProgressStep } from '../../types/models';
+import type { ErrandOrder, OrderStatus } from '../../types/models';
 import {
   Bike,
   CheckCircle2,
@@ -49,7 +49,7 @@ export function MyErrandsScreen({ navigation }: any) {
   const currentUser = useStore((s) => s.currentUser);
   const adminMode = useStore((s) => s.adminMode);
   const orders = useStore((s) => s.orders);
-  const advanceProgress = useStore((s) => s.advanceProgress);
+  const startOrder = useStore((s) => s.startOrder);
   const submitProof = useStore((s) => s.submitProof);
   const dismissBid = useStore((s) => s.dismissBid);
 
@@ -94,13 +94,16 @@ export function MyErrandsScreen({ navigation }: any) {
     ? statusFilters.some((status) => ['AWAITING_PAYMENT', 'CANCELLED'].includes(status))
     : otherList.length > 0;
 
-  const handleAdvanceStep = (orderId: string, nextStep: ProgressStep) => {
-    advanceProgress(orderId, nextStep);
-  };
-
   const handleOpenProof = (order: ErrandOrder) => {
     setSelectedProofOrder(order);
     setProofSheetVisible(true);
+  };
+
+  const handleTaskCompleted = (order: ErrandOrder) => {
+    if (order.status === 'ASSIGNED') {
+      startOrder(order.id);
+    }
+    handleOpenProof(order);
   };
 
   const handleSubmitProof = (data: {
@@ -263,7 +266,7 @@ export function MyErrandsScreen({ navigation }: any) {
           </View>
         )}
 
-        {/* ── Active (SPEC Section 7 Sequential Execution Flow) ────────────────── */}
+        {/* ── Active ───────────────────────────────────────────────────────────── */}
         {showActive && (
           <View style={{ gap: 14 }}>
             {filteredActiveList.length === 0 ? (
@@ -280,24 +283,9 @@ export function MyErrandsScreen({ navigation }: any) {
               </BrutalCard>
             ) : (
               filteredActiveList.map((order) => {
-                const step = order.progressStep;
                 const isAssigned = order.status === 'ASSIGNED';
                 const isInProgress = order.status === 'IN_PROGRESS';
                 const isProofSubmitted = order.status === 'PROOF_SUBMITTED';
-
-                // Sequential steps status:
-                const isArrived =
-                  isInProgress &&
-                  (step === 'ARRIVED' ||
-                    step === 'ITEMS_PURCHASED_OR_COLLECTED' ||
-                    step === 'ON_THE_WAY');
-
-                const isItemsCollected =
-                  isInProgress &&
-                  (step === 'ITEMS_PURCHASED_OR_COLLECTED' ||
-                    step === 'ON_THE_WAY');
-
-                const isOnTheWay = isInProgress && step === 'ON_THE_WAY';
 
                 return (
                   <BrutalCard key={order.id} backgroundColor={Card.cream}>
@@ -327,7 +315,7 @@ export function MyErrandsScreen({ navigation }: any) {
                         etaText={
                           isProofSubmitted
                             ? undefined
-                            : step === 'ON_THE_WAY'
+                            : isInProgress
                             ? '5 mins'
                             : '15 mins'
                         }
@@ -380,54 +368,16 @@ export function MyErrandsScreen({ navigation }: any) {
                         </Text>
                       </TouchableOpacity>
 
-                      {/* Sequential Execution Buttons (SPEC Section 7) */}
+                      {/* Single completion action */}
                       {(isAssigned || isInProgress) && (
-                        <View style={{ gap: 8, borderTopWidth: 2, borderColor: Neutral.black, paddingTop: 10 }}>
-                          <Text style={{ fontWeight: '900', fontSize: 12, textTransform: 'uppercase', color: Neutral.black }}>
-                            Sequential Execution (Only next step enabled):
-                          </Text>
-
-                          {/* 1. Arrived at Location */}
-                          <BrutalButton
-                            label={isArrived ? '✓ 1. Arrived at Location' : '1. Arrived at Location'}
-                            color={isArrived ? '#D1FAE5' : CTA.lime}
-                            fullWidth
-                            size="sm"
-                            disabled={isArrived}
-                            onPress={() => handleAdvanceStep(order.id, 'ARRIVED')}
-                          />
-
-                          {/* 2. Items Purchased / Collected */}
-                          <BrutalButton
-                            label={isItemsCollected ? '✓ 2. Items Purchased / Collected' : '2. Items Purchased / Collected'}
-                            color={isItemsCollected ? '#D1FAE5' : CTA.lime}
-                            fullWidth
-                            size="sm"
-                            disabled={!isArrived || isItemsCollected}
-                            onPress={() => handleAdvanceStep(order.id, 'ITEMS_PURCHASED_OR_COLLECTED')}
-                          />
-
-                          {/* 3. On The Way */}
-                          <BrutalButton
-                            label={isOnTheWay ? '✓ 3. On The Way' : '3. On The Way'}
-                            color={isOnTheWay ? '#D1FAE5' : CTA.lime}
-                            fullWidth
-                            size="sm"
-                            disabled={!isItemsCollected || isOnTheWay}
-                            onPress={() => handleAdvanceStep(order.id, 'ON_THE_WAY')}
-                          />
-
-                          {/* 4. Submit Completion Proof */}
-                          <BrutalButton
-                            label="4. Submit Completion Proof →"
-                            color={CTA.violet}
-                            fullWidth
-                            size="md"
-                            disabled={!isOnTheWay}
-                            onPress={() => handleOpenProof(order)}
-                            style={{ marginTop: 4 }}
-                          />
-                        </View>
+                        <BrutalButton
+                          label="TASK COMPLETED"
+                          color={CTA.lime}
+                          fullWidth
+                          size="lg"
+                          onPress={() => handleTaskCompleted(order)}
+                          style={{ marginTop: 4 }}
+                        />
                       )}
 
                       {isProofSubmitted && (

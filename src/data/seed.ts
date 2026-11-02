@@ -375,7 +375,6 @@ const order7: ErrandOrder = {
   ],
   edgeCaseInstructions: 'Pick up a birthday cake and deliver it carefully. Do not tilt.',
   status: 'PROOF_SUBMITTED',
-  progressStep: 'ON_THE_WAY',
   distanceKm: 1.6,
   createdAt: ago(150),
   threads: [thread_ps],
@@ -452,7 +451,6 @@ const order8: ErrandOrder = {
   edgeCaseInstructions:
     'Purchase 5 kg rice, cooking oil 1 litre, and 2 coconuts from the local market near Feroke. Keep all bills.',
   status: 'COMPLETED',
-  progressStep: 'ON_THE_WAY',
   distanceKm: 5.2,
   createdAt: ago(320),
   threads: [thread_done_ps],

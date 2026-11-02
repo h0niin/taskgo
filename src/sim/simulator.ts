@@ -5,7 +5,7 @@
 
 import { useEffect, useRef } from 'react';
 import { useStore } from '../store';
-import type { ErrandOrder, Offer, ProgressStep } from '../types/models';
+import type { ErrandOrder, Offer } from '../types/models';
 
 const SIMULATED_RUNNER_ID = 'u_run_2';
 const SIMULATED_RUNNER_NAME = 'Vishnu Krishnan';
@@ -30,7 +30,6 @@ export function useSimulator() {
   const placeBid = useStore((s) => s.placeBid);
   const runnerAcceptCounter = useStore((s) => s.runnerAcceptCounter);
   const runnerCounter = useStore((s) => s.runnerCounter);
-  const advanceProgress = useStore((s) => s.advanceProgress);
   const submitProof = useStore((s) => s.submitProof);
 
   // Track timer IDs to avoid duplicate execution
@@ -61,8 +60,10 @@ export function useSimulator() {
             // Verify order is still in PLACED or BIDDING before bidding
             const currentOrder = useStore.getState().orders.find((o) => o.id === order.id);
             if (currentOrder && ['PLACED', 'BIDDING'].includes(currentOrder.status)) {
+              // Use order.basePrice as bid floor
+              const basePrice = currentOrder.basePrice ?? 60;
               const plausiblePrice = Math.round(
-                Math.max(60, currentOrder.distanceKm * 24 + 40),
+                Math.max(basePrice, currentOrder.distanceKm * 24 + 40),
               );
               const note =
                 MOCK_REASONING_NOTES[
@@ -139,12 +140,12 @@ export function useSimulator() {
         }
       }
 
-      // ── 3. Step Progression for assigned simulated runner on ~10s timer ─────
+      // ── 3. Auto-submit completion proof for simulated assigned runner ──────
       if (
         (order.status === 'ASSIGNED' || order.status === 'IN_PROGRESS') &&
         order.assignedRunnerId === SIMULATED_RUNNER_ID
       ) {
-        const timerKey = `progress_${order.id}_${order.progressStep ?? 'INITIAL'}`;
+        const timerKey = `proof_${order.id}`;
 
         if (!activeTimers.current.has(timerKey)) {
           activeTimers.current.add(timerKey);
@@ -155,26 +156,15 @@ export function useSimulator() {
             const currentOrder = useStore.getState().orders.find((o) => o.id === order.id);
             if (!currentOrder || currentOrder.assignedRunnerId !== SIMULATED_RUNNER_ID) return;
 
-            if (currentOrder.status === 'ASSIGNED') {
-              advanceProgress(currentOrder.id, 'ARRIVED');
-            } else if (currentOrder.status === 'IN_PROGRESS') {
-              if (currentOrder.progressStep === 'ARRIVED') {
-                advanceProgress(currentOrder.id, 'ITEMS_PURCHASED_OR_COLLECTED');
-              } else if (currentOrder.progressStep === 'ITEMS_PURCHASED_OR_COLLECTED') {
-                advanceProgress(currentOrder.id, 'ON_THE_WAY');
-              } else if (currentOrder.progressStep === 'ON_THE_WAY') {
-                // Submit completion proof
-                const hasAdditionalCosts = currentOrder.category === 'Store Purchases';
-                submitProof({
-                  orderId: currentOrder.id,
-                  completionPhotoUri: 'https://picsum.photos/seed/proof_sim/400/300',
-                  additionalCostPhotoUri: hasAdditionalCosts
-                    ? 'https://picsum.photos/seed/bill_sim/400/300'
-                    : undefined,
-                  additionalCosts: hasAdditionalCosts ? 220 : undefined,
-                });
-              }
-            }
+            const hasAdditionalCosts = currentOrder.category === 'Store Purchases';
+            submitProof({
+              orderId: currentOrder.id,
+              completionPhotoUri: 'https://picsum.photos/seed/proof_sim/400/300',
+              additionalCostPhotoUri: hasAdditionalCosts
+                ? 'https://picsum.photos/seed/bill_sim/400/300'
+                : undefined,
+              additionalCosts: hasAdditionalCosts ? 220 : undefined,
+            });
           }, 9000);
         }
       }
@@ -190,24 +180,15 @@ export function skipSimulationAhead(orderId: string) {
   const order = state.orders.find((o) => o.id === orderId);
   if (!order) return;
 
-  if (order.status === 'ASSIGNED') {
-    state.advanceProgress(orderId, 'ARRIVED');
-  } else if (order.status === 'IN_PROGRESS') {
-    if (order.progressStep === 'ARRIVED') {
-      state.advanceProgress(orderId, 'ITEMS_PURCHASED_OR_COLLECTED');
-    } else if (order.progressStep === 'ITEMS_PURCHASED_OR_COLLECTED') {
-      state.advanceProgress(orderId, 'ON_THE_WAY');
-    } else if (order.progressStep === 'ON_THE_WAY') {
-      const hasAdditionalCosts = order.category === 'Store Purchases';
-      state.submitProof({
-        orderId,
-        completionPhotoUri: 'https://picsum.photos/seed/proof_skip/400/300',
-        additionalCostPhotoUri: hasAdditionalCosts
-          ? 'https://picsum.photos/seed/bill_skip/400/300'
-          : undefined,
-        additionalCosts: hasAdditionalCosts ? 250 : undefined,
-      });
-    }
+  if (order.status === 'ASSIGNED' || order.status === 'IN_PROGRESS') {
+    const hasAdditionalCosts = order.category === 'Store Purchases';
+    state.submitProof({
+      orderId,
+      completionPhotoUri: 'https://picsum.photos/seed/proof_skip/400/300',
+      additionalCostPhotoUri: hasAdditionalCosts
+        ? 'https://picsum.photos/seed/bill_skip/400/300'
+        : undefined,
+      additionalCosts: hasAdditionalCosts ? 250 : undefined,
+    });
   }
 }
-

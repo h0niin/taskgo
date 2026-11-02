@@ -376,6 +376,7 @@ export function ProofUploadSheet({
       visible={costAmountModalVisible}
       amount={costAmount}
       note=""
+      minAmount={0}
       showNote={false}
       title="Enter Additional Costs Amount"
       submitLabel="Use Amount"

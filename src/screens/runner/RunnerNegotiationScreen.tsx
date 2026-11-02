@@ -1,19 +1,6 @@
 import React, { useState } from 'react';
-import {
-  KeyboardAvoidingView,
-  Platform,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
-import {
-  BrutalBadge,
-  BrutalButton,
-  BrutalCard,
-  BidDetailsModal,
-  KeyboardAwareScrollView,
-  OfferCountdown,
-} from '../../components';
+import { KeyboardAvoidingView, Platform, Text, TouchableOpacity, View } from 'react-native';
+import { BrutalBadge, BrutalButton, BrutalCard, BidDetailsModal, KeyboardAwareScrollView } from '../../components';
 import { Canvas, Card, CTA, Neutral } from '../../theme';
 import { counterCount, useStore } from '../../store';
 import { formatDateTime, formatRupees, humanizeStatus } from '../../utils/format';
@@ -26,7 +13,6 @@ export function RunnerNegotiationScreen({ route, navigation }: any) {
   const runnerAcceptCounter = useStore((s) => s.runnerAcceptCounter);
   const runnerCounter = useStore((s) => s.runnerCounter);
   const runnerRejectCounter = useStore((s) => s.runnerRejectCounter);
-  const expireOffer = useStore((s) => s.expireOffer);
 
   const order = orders.find((o) => o.id === orderId);
   const thread = order?.threads.find((t) => t.id === threadId);
@@ -36,9 +22,7 @@ export function RunnerNegotiationScreen({ route, navigation }: any) {
   if (!order || !thread) {
     return (
       <View style={{ flex: 1, backgroundColor: Canvas.orange, padding: 20, justifyContent: 'center' }}>
-        <Text style={{ fontWeight: '900', color: Neutral.white, fontSize: 18 }}>
-          Negotiation thread not found.
-        </Text>
+        <Text style={{ fontWeight: '900', color: Neutral.white, fontSize: 18 }}>Negotiation thread not found.</Text>
         <BrutalButton label="Back" onPress={() => navigation.goBack()} />
       </View>
     );
@@ -50,7 +34,6 @@ export function RunnerNegotiationScreen({ route, navigation }: any) {
     isLatestPending && latestOffer.from === 'CUSTOMER' && thread.status === 'OPEN';
 
   const countersExchanged = counterCount(thread);
-  const maxCountersReached = countersExchanged >= 5;
 
   const handleAccept = () => {
     runnerAcceptCounter(orderId, threadId);
@@ -66,6 +49,9 @@ export function RunnerNegotiationScreen({ route, navigation }: any) {
     runnerCounter(orderId, threadId, Number(amount), note);
     setShowCounterInput(false);
   };
+
+  // Display basePrice from order if available
+  const basePrice = order?.basePrice ? `Base: ₹${order.basePrice}` : 'N/A';
 
   return (
     <KeyboardAvoidingView
@@ -116,7 +102,12 @@ export function RunnerNegotiationScreen({ route, navigation }: any) {
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 }}>
             <Clock size={12} color="#6B7280" />
             <Text style={{ fontWeight: '700', fontSize: 11, color: '#6B7280' }}>
-              {countersExchanged}/5 counter rounds used
+              Counters exchanged: {countersExchanged}
+            </Text>
+          </View>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 }}>
+            <Text style={{ fontWeight: '700', fontSize: 11, color: '#6B7280' }}>
+              {basePrice}
             </Text>
           </View>
         </View>
@@ -172,18 +163,10 @@ export function RunnerNegotiationScreen({ route, navigation }: any) {
                       "{offer.note}"
                     </Text>
 
-                    {/* Timestamp & Expiry Countdown */}
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 }}>
-                      {offer.status === 'PENDING' ? (
-                        <OfferCountdown
-                          createdAtIso={offer.createdAt}
-                          onExpire={() => expireOffer(order.id, thread.id, offer.id)}
-                        />
-                      ) : <View />}
-                      <Text style={{ fontWeight: '700', fontSize: 10, color: '#9CA3AF' }}>
-                        {formatDateTime(offer.createdAt)}
-                      </Text>
-                    </View>
+                    {/* Timestamp */}
+                    <Text style={{ fontWeight: '700', fontSize: 10, color: '#9CA3AF', marginTop: 4 }}>
+                      {formatDateTime(offer.createdAt)}
+                    </Text>
                   </View>
                 </BrutalCard>
               </View>
@@ -225,10 +208,9 @@ export function RunnerNegotiationScreen({ route, navigation }: any) {
                 <View style={{ flexDirection: 'row', gap: 10 }}>
                   <View style={{ flex: 1 }}>
                     <BrutalButton
-                      label={maxCountersReached ? 'Counter Limit (5/5)' : 'Send Counter'}
+                      label="Send Counter"
                       color={CTA.violet}
                       fullWidth
-                      disabled={maxCountersReached}
                       onPress={() => setShowCounterInput(true)}
                     />
                   </View>
@@ -245,8 +227,9 @@ export function RunnerNegotiationScreen({ route, navigation }: any) {
             ) : (
               <BidDetailsModal
                 visible={showCounterInput}
-                amount=""
+                amount={String(latestOffer.price)}
                 note=""
+                minAmount={order.basePrice ?? 60}
                 title={`Send Counter Quote (${countersExchanged + 1}/5)`}
                 submitLabel="Submit Counter"
                 onCancel={() => setShowCounterInput(false)}

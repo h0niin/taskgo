@@ -115,10 +115,10 @@ export function OrderDetailScreen({ route, navigation }: any) {
               <BrutalBadge label={`FEE: ${formatRupees(order.agreedFee ?? 0)}`} color={Neutral.black} />
             </View>
             <Text style={{ fontWeight: '700', fontSize: 13, color: '#1F2937' }}>
-              Pay {formatRupees(order.agreedFee ?? 0)} to start your errand with {order.assignedRunnerName}.
+              Task Boy gets {formatRupees(order.agreedFee ?? 0)} · Platform fee ₹60 extra.
             </Text>
             <BrutalButton
-              label={`Pay ${formatRupees(order.agreedFee ?? 0)} via UPI →`}
+              label={`Pay Total ${formatRupees((order.agreedFee ?? 0) + 60)} via UPI →`}
               color={Neutral.black}
               textColor={Neutral.white}
               fullWidth
@@ -243,7 +243,7 @@ export function OrderDetailScreen({ route, navigation }: any) {
               etaText={
                 order.status === 'PROOF_SUBMITTED'
                   ? undefined
-                  : order.progressStep === 'ON_THE_WAY'
+                  : order.status === 'IN_PROGRESS'
                   ? '5 mins'
                   : '12-15 mins'
               }

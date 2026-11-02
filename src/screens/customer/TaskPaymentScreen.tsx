@@ -103,6 +103,14 @@ export function TaskPaymentScreen({ route, navigation }: any) {
                   {formatRupees(agreedFee)}
                 </Text>
               </View>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                <Text style={{ fontWeight: '700', fontSize: 14, color: '#4B5563' }}>
+                  Platform Fee:
+                </Text>
+                <Text style={{ fontWeight: '900', fontSize: 15 }}>
+                  ₹60
+                </Text>
+              </View>
 
               <View
                 style={{
@@ -118,7 +126,7 @@ export function TaskPaymentScreen({ route, navigation }: any) {
                   Payable Right Now:
                 </Text>
                 <Text style={{ fontWeight: '900', fontSize: 26, color: Neutral.black }}>
-                  {formatRupees(agreedFee)}
+                  {formatRupees(agreedFee + 60)}
                 </Text>
               </View>
             </View>

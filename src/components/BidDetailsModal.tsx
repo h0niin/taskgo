@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import {
+  Alert,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -18,6 +19,7 @@ interface BidDetailsModalProps {
   showNote?: boolean;
   title?: string;
   submitLabel?: string;
+  minAmount?: number;
   onCancel: () => void;
   onSubmit: (amount: string, note: string) => void;
 }
@@ -29,6 +31,7 @@ export function BidDetailsModal({
   showNote = true,
   title = 'Enter Bid Amount & Note',
   submitLabel = 'Use Amount & Note',
+  minAmount = 60,
   onCancel,
   onSubmit,
 }: BidDetailsModalProps) {
@@ -37,8 +40,10 @@ export function BidDetailsModal({
   const [error, setError] = useState<string | null>(null);
 
   const confirm = () => {
-    if (!/^\d+$/.test(draftAmount) || Number(draftAmount) <= 0) {
-      setError('Enter an amount greater than zero.');
+    if (!/^\d+$/.test(draftAmount) || Number(draftAmount) < minAmount) {
+      const msg = `Amount cannot be below ₹${minAmount}.`;
+      setError(msg);
+      Alert.alert('Invalid Amount', msg);
       return;
     }
     if (showNote && !draftNote.trim()) {

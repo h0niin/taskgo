@@ -2,7 +2,7 @@
 // Section 0 of SPEC.md: ₹ everywhere, Indian number formatting,
 // phones as +91 XXXXX XXXXX.
 
-import type { ErrandOrder, ProgressStep } from '../types/models';
+import type { ErrandOrder } from '../types/models';
 
 /** Turn an enum value into display text: AWAITING_PAYMENT → "Awaiting Payment". */
 export function humanizeStatus(value: string): string {
@@ -12,24 +12,8 @@ export function humanizeStatus(value: string): string {
     .replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
-const PROGRESS_LABELS: Record<ProgressStep, string> = {
-  ARRIVED: 'Arrived at Location',
-  ITEMS_PURCHASED_OR_COLLECTED: 'Items Purchased / Collected',
-  ON_THE_WAY: 'On the Way',
-};
-
-/** Human-readable runner progress step. */
-export function formatProgressStep(step?: ProgressStep): string {
-  return step ? PROGRESS_LABELS[step] : 'En Route';
-}
-
-/**
- * Current user-facing stage of an order. Order status wins over progressStep so
- * a submitted proof never keeps showing the last travel step.
- */
-export function formatOrderStage(
-  order: Pick<ErrandOrder, 'status' | 'progressStep'>,
-): string {
+/** Current user-facing stage of an order. */
+export function formatOrderStage(order: Pick<ErrandOrder, 'status'>): string {
   switch (order.status) {
     case 'PLACED':
       return 'Awaiting Bids';
@@ -40,7 +24,7 @@ export function formatOrderStage(
     case 'ASSIGNED':
       return 'Runner Assigned';
     case 'IN_PROGRESS':
-      return formatProgressStep(order.progressStep);
+      return 'In Progress';
     case 'PROOF_SUBMITTED':
       return 'Proof Submitted';
     case 'AWAITING_ADDITIONAL_PAYMENT':

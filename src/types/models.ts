@@ -25,13 +25,8 @@ export type OrderStatus =
   | 'COMPLETED'
   | 'CANCELLED';
 
-/** Sub-steps while an order is IN_PROGRESS */
-export type ProgressStep =
-  | 'ARRIVED'
-  | 'ITEMS_PURCHASED_OR_COLLECTED'
-  | 'ON_THE_WAY';
-
 // ─── Locations ────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
 
 export interface LocationStop {
   id: string;
@@ -53,8 +48,7 @@ export interface Offer {
   price: number;
   note: string;
   createdAt: string; // ISO 8601
-  status: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'COUNTERED' | 'EXPIRED';
-  // EXPIRED is unused: offer expiry is not implemented yet, so nothing produces it.
+  status: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'COUNTERED';
 }
 
 export interface BidThread {
@@ -88,9 +82,9 @@ export interface ErrandOrder {
   /** Optional reference photos attached when the errand was posted. */
   attachments?: string[];
   status: OrderStatus;
-  progressStep?: ProgressStep;
   distanceKm: number;
   createdAt: string; // ISO 8601
+  basePrice?: number; // bid floor derived from distance/weight/time
 
   // Bidding
   threads: BidThread[];
