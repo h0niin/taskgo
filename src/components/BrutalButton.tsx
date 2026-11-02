@@ -28,7 +28,7 @@ import {
 } from 'react-native';
 import { BORDER_RADIUS, BORDER_WIDTH, Neutral, SHADOW_OFFSET } from '../theme';
 
-export type BrutalButtonSize = 'sm' | 'md' | 'lg';
+export type BrutalButtonSize = 'xs' | 'sm' | 'md' | 'lg';
 
 export interface BrutalButtonProps {
   label: string;
@@ -50,6 +50,7 @@ const SIZE_MAP: Record<
   BrutalButtonSize,
   { px: number; py: number; fontSize: number }
 > = {
+  xs: { px: 10, py:  4, fontSize: 11 },
   sm: { px: 16, py:  8, fontSize: 13 },
   md: { px: 24, py: 12, fontSize: 15 },
   lg: { px: 32, py: 16, fontSize: 18 },

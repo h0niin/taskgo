@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import {
+  Image,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -10,6 +11,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import {
   BrutalBadge,
   BrutalButton,
@@ -20,7 +22,9 @@ import {
 import { Canvas, Card, CTA, Neutral } from '../../theme';
 import { ORDER_CATEGORIES } from '../../data/seed';
 import { useStore } from '../../store';
-import { Plus, Trash2, Search, MapPin } from 'lucide-react-native';
+import { Plus, Trash2, Search, MapPin, Camera } from 'lucide-react-native';
+
+const MAX_ATTACHMENTS = 3;
 
 interface StopDraft {
   id: string;
@@ -68,7 +72,42 @@ export function CreateOrderScreen({ navigation }: any) {
 
   // Multiline special instructions
   const [instructions, setInstructions] = useState('');
+  const [attachments, setAttachments] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
+
+  const pickAttachment = async (source: 'camera' | 'gallery') => {
+    if (attachments.length >= MAX_ATTACHMENTS) {
+      setError(`You can attach up to ${MAX_ATTACHMENTS} photos.`);
+      return;
+    }
+
+    let result: ImagePicker.ImagePickerResult;
+
+    if (source === 'camera') {
+      const permission = await ImagePicker.requestCameraPermissionsAsync();
+      if (!permission.granted) {
+        alert('Camera permission needed. Use Gallery instead.');
+        return;
+      }
+      result = await ImagePicker.launchCameraAsync({ allowsEditing: true, quality: 0.7 });
+    } else {
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) {
+        alert('Gallery permission required to pick images.');
+        return;
+      }
+      result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        quality: 0.7,
+      });
+    }
+
+    if (!result.canceled && result.assets?.[0]) {
+      setAttachments((prev) => [...prev, result.assets[0].uri]);
+      setError(null);
+    }
+  };
 
   const addStop = () => {
     const nextIndex = stops.length + 1;
@@ -167,10 +206,12 @@ export function CreateOrderScreen({ navigation }: any) {
         lng: s.lng,
       })),
       edgeCaseInstructions: instructions.trim(),
+      attachments,
       distanceKm: Math.round((2.0 + stops.length * 1.2) * 10) / 10,
     });
 
     // Reset and navigate to order detail or dashboard
+    setAttachments([]);
     navigation.navigate('OrderDetail', { orderId: newOrder.id });
   };
 
@@ -438,6 +479,81 @@ export function CreateOrderScreen({ navigation }: any) {
               textAlignVertical: 'top',
             }}
           />
+        </View>
+      </BrutalCard>
+
+      {/* Optional Attachments */}
+      <BrutalCard backgroundColor={Card.cream}>
+        <View style={{ padding: 18, gap: 12 }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Text style={{ fontWeight: '900', fontSize: 14, textTransform: 'uppercase' }}>
+              Attachments (Optional)
+            </Text>
+            <BrutalBadge label={`${attachments.length}/${MAX_ATTACHMENTS}`} color={Neutral.black} />
+          </View>
+          <Text style={{ fontWeight: '700', fontSize: 12, color: '#4B5563' }}>
+            Add photos or screenshots to help the Task Boy understand the errand.
+          </Text>
+
+          {attachments.length > 0 && (
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
+              {attachments.map((uri, index) => (
+                <View key={`${uri}-${index}`} style={{ width: 92, height: 92 }}>
+                  <Image
+                    source={{ uri }}
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      borderRadius: 10,
+                      borderWidth: 2,
+                      borderColor: Neutral.black,
+                    }}
+                    resizeMode="cover"
+                  />
+                  <TouchableOpacity
+                    accessibilityRole="button"
+                    accessibilityLabel={`Remove attachment ${index + 1}`}
+                    onPress={() =>
+                      setAttachments((prev) => prev.filter((_, i) => i !== index))
+                    }
+                    style={{
+                      position: 'absolute',
+                      top: -6,
+                      right: -6,
+                      backgroundColor: '#DC2626',
+                      borderWidth: 2,
+                      borderColor: Neutral.black,
+                      borderRadius: 999,
+                      padding: 4,
+                    }}
+                  >
+                    <Trash2 size={12} color={Neutral.white} />
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </View>
+          )}
+
+          <View style={{ flexDirection: 'row', gap: 10 }}>
+            <BrutalButton
+              label="Camera"
+              color="#EDE9FE"
+              size="sm"
+              leftIcon={<Camera size={16} color={Neutral.black} />}
+              onPress={() => pickAttachment('camera')}
+              style={{ flex: 1 }}
+              fullWidth
+            />
+            <BrutalButton
+              label="Gallery"
+              color="#F3F4F6"
+              size="sm"
+              leftIcon={<Camera size={16} color={Neutral.black} />}
+              onPress={() => pickAttachment('gallery')}
+              style={{ flex: 1 }}
+              fullWidth
+            />
+          </View>
         </View>
       </BrutalCard>
 

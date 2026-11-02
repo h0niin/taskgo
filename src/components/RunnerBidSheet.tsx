@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import {
+  Image,
   Linking,
   Text,
   TouchableOpacity,
@@ -23,7 +24,7 @@ interface RunnerBidSheetProps {
   onSubmitBid: (orderId: string, price: number, note: string) => void;
   onEditBid?: (orderId: string, threadId: string, price: number, note: string) => void;
   onWithdrawBid?: (orderId: string, threadId: string) => void;
-  onDismissRejectedBid?: (orderId: string, threadId: string) => void;
+  onDismissBid?: (orderId: string, threadId: string) => void;
   onOpenNegotiation?: (orderId: string, threadId: string) => void;
 }
 
@@ -36,7 +37,7 @@ export function RunnerBidSheet({
   onSubmitBid,
   onEditBid,
   onWithdrawBid,
-  onDismissRejectedBid,
+  onDismissBid,
   onOpenNegotiation,
 }: RunnerBidSheetProps) {
   const [price, setPrice] = useState('');
@@ -51,7 +52,8 @@ export function RunnerBidSheet({
   const myLatestOffer = existingThread
     ? existingThread.offers[existingThread.offers.length - 1]
     : null;
-  const isRejected = existingThread?.status === 'REJECTED';
+  const isInactive =
+    existingThread?.status === 'REJECTED' || existingThread?.status === 'WITHDRAWN';
 
   const canEditOrWithdraw =
     existingThread &&
@@ -83,26 +85,28 @@ export function RunnerBidSheet({
     }
   };
 
-  const handlePlaceBid = () => {
+  const handlePlaceBid = (amountOverride?: string, noteOverride?: string) => {
     setError(null);
-    const parsedPrice = parseInt(price, 10);
+    const draftPrice = amountOverride ?? price;
+    const draftNote = (noteOverride ?? note).trim();
+    const parsedPrice = parseInt(draftPrice, 10);
 
     if (isNaN(parsedPrice) || parsedPrice <= 0) {
       setError('Please enter a valid bid amount (₹)');
       return;
     }
 
-    if (!note.trim()) {
+    if (!draftNote) {
       setError('A short reasoning note is required (max 120 chars)');
       return;
     }
 
-    if (note.trim().length > 120) {
+    if (draftNote.length > 120) {
       setError('Note must be at most 120 characters');
       return;
     }
 
-    onSubmitBid(order.id, parsedPrice, note.trim());
+    onSubmitBid(order.id, parsedPrice, draftNote);
     setPrice('');
     setNote('');
     onClose();
@@ -207,6 +211,41 @@ export function RunnerBidSheet({
           </Text>
         </View>
 
+        {/* Customer Attachments */}
+        {order.attachments?.length ? (
+          <View
+            style={{
+              backgroundColor: '#FFFFFF',
+              borderWidth: 3,
+              borderColor: Neutral.black,
+              borderRadius: 14,
+              padding: 14,
+              gap: 8,
+            }}
+          >
+            <Text style={{ fontWeight: '900', fontSize: 12, textTransform: 'uppercase' }}>
+              Attachments ({order.attachments.length}):
+            </Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+              {order.attachments.map((uri, index) => (
+                <Image
+                  key={`${uri}-${index}`}
+                  source={{ uri }}
+                  style={{
+                    width: 84,
+                    height: 84,
+                    borderRadius: 8,
+                    borderWidth: 2,
+                    borderColor: Neutral.black,
+                    backgroundColor: '#E5E7EB',
+                  }}
+                  resizeMode="cover"
+                />
+              ))}
+            </View>
+          </View>
+        ) : null}
+
         {/* Customer Contact Button (SPEC Section 9.2) */}
         <TouchableOpacity
           onPress={handleCallCustomer}
@@ -280,7 +319,7 @@ export function RunnerBidSheet({
           ) : (
             <View
               style={{
-                backgroundColor: isRejected ? '#E5E7EB' : Card.mint,
+                backgroundColor: isInactive ? '#E5E7EB' : Card.mint,
                 borderWidth: 3,
                 borderColor: Neutral.black,
                 borderRadius: 16,
@@ -290,11 +329,19 @@ export function RunnerBidSheet({
             >
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Text style={{ fontWeight: '900', fontSize: 14, textTransform: 'uppercase' }}>
-                  {isRejected ? 'Rejected Bid:' : 'Your Active Bid:'}
+                  {isInactive
+                    ? `${humanizeStatus(existingThread.status)} Bid:`
+                    : 'Your Active Bid:'}
                 </Text>
                 <BrutalBadge
                   label={humanizeStatus(existingThread.status)}
-                  color={isRejected ? '#EF4444' : '#10B981'}
+                  color={
+                    existingThread.status === 'REJECTED'
+                      ? '#EF4444'
+                      : existingThread.status === 'WITHDRAWN'
+                      ? '#6B7280'
+                      : '#10B981'
+                  }
                 />
               </View>
 
@@ -306,16 +353,17 @@ export function RunnerBidSheet({
               </Text>
 
               <View style={{ gap: 8, marginTop: 4 }}>
-                {isRejected ? (
+                {isInactive ? (
                   <BrutalButton
-                    label="Remove Rejected Bid"
+                    label="Remove Bid"
                     color="#EF4444"
-                    fullWidth
-                    size="md"
+                    textColor={Neutral.white}
+                    size="xs"
                     onPress={() => {
-                      onDismissRejectedBid?.(order.id, existingThread.id);
+                      onDismissBid?.(order.id, existingThread.id);
                       onClose();
                     }}
+                    style={{ alignSelf: 'flex-end' }}
                   />
                 ) : (
                   <BrutalButton
@@ -330,7 +378,7 @@ export function RunnerBidSheet({
                   />
                 )}
 
-                {!isRejected && canEditOrWithdraw && (
+                {!isInactive && canEditOrWithdraw && (
                   <View style={{ flexDirection: 'row', gap: 8 }}>
                     <View style={{ flex: 1 }}>
                       <BrutalButton
@@ -385,18 +433,10 @@ export function RunnerBidSheet({
                 style={{ backgroundColor: '#FFFFFF', borderWidth: 3, borderColor: Neutral.black, borderRadius: 999, padding: 14 }}
               >
                 <Text style={{ fontWeight: '700', fontSize: 15, color: price ? Neutral.black : '#9CA3AF' }}>
-                  {price ? `${formatRupees(Number(price))} · ${note || 'Add reasoning note'}` : 'Tap to enter amount and note'}
+                  {price ? `${formatRupees(Number(price))} · ${note || 'Add reasoning note'}` : 'Tap to enter amount & place bid'}
                 </Text>
               </TouchableOpacity>
             </View>
-
-            <BrutalButton
-              label="SUBMIT RUNNER BID"
-              color={CTA.lime}
-              fullWidth
-              size="lg"
-              onPress={handlePlaceBid}
-            />
           </View>
         )}
         </View>
@@ -407,11 +447,17 @@ export function RunnerBidSheet({
         visible={priceModalVisible}
         amount={price}
         note={note}
+        title={existingThread ? 'Edit Bid Amount & Note' : 'Enter Bid & Place It'}
+        submitLabel={existingThread ? 'Use Amount & Note' : 'Place Bid'}
         onCancel={() => setPriceModalVisible(false)}
         onSubmit={(amount, reasoning) => {
-          setPrice(amount);
-          setNote(reasoning);
           setPriceModalVisible(false);
+          if (existingThread) {
+            setPrice(amount);
+            setNote(reasoning);
+          } else {
+            handlePlaceBid(amount, reasoning);
+          }
         }}
       />
     </>

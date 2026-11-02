@@ -51,6 +51,7 @@ interface AppState {
     category: string;
     stops: Omit<LocationStop, 'id'>[];
     edgeCaseInstructions: string;
+    attachments?: string[];
     distanceKm?: number;
   }) => ErrandOrder;
 
@@ -100,7 +101,7 @@ interface AppState {
   ) => void;
 
   withdrawBid: (orderId: string, threadId: string) => void;
-  dismissRejectedBid: (orderId: string, threadId: string) => void;
+  dismissBid: (orderId: string, threadId: string) => void;
 
   runnerCounter: (
     orderId: string,
@@ -166,7 +167,7 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   // ── Create order ───────────────────────────────────────────────────────────
-  createOrder({ category, stops, edgeCaseInstructions, distanceKm = 2.0 }) {
+  createOrder({ category, stops, edgeCaseInstructions, attachments, distanceKm = 2.0 }) {
     const { currentUser, adminMode, orders } = get();
 
     // When admin is acting as customer, use the demo customer id
@@ -181,6 +182,7 @@ export const useStore = create<AppState>((set, get) => ({
       category,
       stops: stops.map((s) => ({ ...s, id: uid('stp') })),
       edgeCaseInstructions,
+      attachments,
       status: 'PLACED',
       distanceKm,
       createdAt: iso(),
@@ -380,7 +382,7 @@ export const useStore = create<AppState>((set, get) => ({
     }));
   },
 
-  dismissRejectedBid(orderId, threadId) {
+  dismissBid(orderId, threadId) {
     set((s) => ({
       orders: s.orders.map((o) =>
         o.id !== orderId
@@ -388,7 +390,8 @@ export const useStore = create<AppState>((set, get) => ({
           : {
               ...o,
               threads: o.threads.map((t) =>
-                t.id === threadId && t.status === 'REJECTED'
+                t.id === threadId &&
+                (t.status === 'REJECTED' || t.status === 'WITHDRAWN')
                   ? { ...t, dismissedByRunner: true }
                   : t,
               ),
@@ -666,7 +669,7 @@ export const selectRunnerDone = (
     (o) => o.assignedRunnerId === runnerId && o.status === 'COMPLETED',
   );
 
-/** Open and not-yet-dismissed rejected bid threads for a runner. */
+/** Open, withdrawn, and not-yet-dismissed rejected bid threads for a runner. */
 export const selectRunnerBiddingThreads = (
   orders: ErrandOrder[],
   runnerId: string,
@@ -677,7 +680,8 @@ export const selectRunnerBiddingThreads = (
       if (
         thread.runnerId === runnerId &&
         (thread.status === 'OPEN' ||
-          (thread.status === 'REJECTED' && !thread.dismissedByRunner))
+          ((thread.status === 'REJECTED' || thread.status === 'WITHDRAWN') &&
+            !thread.dismissedByRunner))
       ) {
         result.push({ order, thread });
       }

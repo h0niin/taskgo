@@ -9,7 +9,7 @@ import {
 } from '../../components';
 import { Canvas, Card, CTA, Neutral } from '../../theme';
 import { effectiveRunnerId, selectRunnerFeed, useStore } from '../../store';
-import { formatDistance } from '../../utils/format';
+import { formatDistance, humanizeStatus } from '../../utils/format';
 import type { ErrandOrder } from '../../types/models';
 import { Bike, Navigation, MapPin } from 'lucide-react-native';
 
@@ -30,17 +30,17 @@ export function RunnerFeedScreen({ navigation }: any) {
   const placeBid = useStore((s) => s.placeBid);
   const editBid = useStore((s) => s.editBid);
   const withdrawBid = useStore((s) => s.withdrawBid);
-  const dismissRejectedBid = useStore((s) => s.dismissRejectedBid);
+  const dismissBid = useStore((s) => s.dismissBid);
 
   const runnerId = effectiveRunnerId(currentUser, adminMode) || 'u_run_1';
   const runnerName = currentUser?.role === 'TASKBOY' ? currentUser.name : 'Rahul Das';
 
-  const feedOrders = selectRunnerFeed(orders).filter(
-    (order) =>
-      !order.threads.some(
-        (thread) => thread.runnerId === runnerId && thread.status === 'REJECTED',
-      ),
-  );
+  const feedOrders = selectRunnerFeed(orders).filter((order) => {
+    const thread = order.threads.find((t) => t.runnerId === runnerId);
+    const isInactive =
+      thread?.status === 'REJECTED' || thread?.status === 'WITHDRAWN';
+    return !(isInactive && thread?.dismissedByRunner);
+  });
 
   const handleOpenBid = (order: ErrandOrder) => {
     setSelectedOrder(order);
@@ -49,6 +49,13 @@ export function RunnerFeedScreen({ navigation }: any) {
 
   const handleSubmitBid = (orderId: string, price: number, note: string) => {
     placeBid(orderId, runnerId, runnerName, price, note);
+    const thread = useStore
+      .getState()
+      .orders.find((order) => order.id === orderId)
+      ?.threads.find((t) => t.runnerId === runnerId);
+    if (thread) {
+      navigation.navigate('RunnerNegotiation', { orderId, threadId: thread.id });
+    }
   };
 
   const handleWithdrawBid = (orderId: string, threadId: string) => {
@@ -164,6 +171,8 @@ export function RunnerFeedScreen({ navigation }: any) {
             const pickup = order.stops[0]?.address ?? 'Pickup';
             const dropoff = order.stops[order.stops.length - 1]?.address ?? 'Dropoff';
             const myThread = order.threads.find((t) => t.runnerId === runnerId);
+            const isInactive =
+              myThread?.status === 'REJECTED' || myThread?.status === 'WITHDRAWN';
 
             return (
               <TouchableOpacity
@@ -171,12 +180,19 @@ export function RunnerFeedScreen({ navigation }: any) {
                 activeOpacity={0.8}
                 onPress={() => handleOpenBid(order)}
               >
-                <BrutalCard backgroundColor={Card.cream}>
+                <BrutalCard backgroundColor={isInactive ? '#E5E7EB' : Card.cream}>
                   <View style={{ padding: 16, gap: 10 }}>
-                    {/* Meta Row: Category + Distance */}
+                    {/* Meta Row: Category + Distance/Status */}
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                       <BrutalBadge label={order.category} color="#F97316" />
-                      <BrutalBadge label={formatDistance(order.distanceKm)} color={Neutral.black} />
+                      {isInactive && myThread ? (
+                        <BrutalBadge
+                          label={humanizeStatus(myThread.status)}
+                          color={myThread.status === 'REJECTED' ? '#EF4444' : '#6B7280'}
+                        />
+                      ) : (
+                        <BrutalBadge label={formatDistance(order.distanceKm)} color={Neutral.black} />
+                      )}
                     </View>
 
                     {/* Route Summary (SPEC Section 9.1) */}
@@ -224,7 +240,15 @@ export function RunnerFeedScreen({ navigation }: any) {
                         {order.threads.length} Current Bid{order.threads.length === 1 ? '' : 's'}
                       </Text>
 
-                      {myThread ? (
+                      {isInactive && myThread ? (
+                        <BrutalButton
+                          label="Remove Bid"
+                          color="#EF4444"
+                          textColor={Neutral.white}
+                          size="xs"
+                          onPress={() => dismissBid(order.id, myThread.id)}
+                        />
+                      ) : myThread ? (
                         <BrutalButton
                           label="View My Bid"
                           color={CTA.violet}
@@ -258,7 +282,7 @@ export function RunnerFeedScreen({ navigation }: any) {
         onSubmitBid={handleSubmitBid}
         onEditBid={(orderId, threadId, price, note) => editBid(orderId, threadId, price, note)}
         onWithdrawBid={handleWithdrawBid}
-        onDismissRejectedBid={dismissRejectedBid}
+        onDismissBid={dismissBid}
         onOpenNegotiation={handleOpenNegotiation}
       />
     </View>

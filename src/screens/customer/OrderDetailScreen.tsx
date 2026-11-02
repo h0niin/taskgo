@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import {
+  Image,
   Linking,
   Modal,
   Pressable,
@@ -455,6 +456,34 @@ export function OrderDetailScreen({ route, navigation }: any) {
             </Text>
           </View>
         </BrutalCard>
+
+        {/* Optional Attachments */}
+        {order.attachments?.length ? (
+          <BrutalCard backgroundColor="#FFFFFF">
+            <View style={{ padding: 16, gap: 10 }}>
+              <Text style={{ fontWeight: '900', fontSize: 13, textTransform: 'uppercase' }}>
+                Attachments ({order.attachments.length})
+              </Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                {order.attachments.map((uri, index) => (
+                  <Image
+                    key={`${uri}-${index}`}
+                    source={{ uri }}
+                    style={{
+                      width: 96,
+                      height: 96,
+                      borderRadius: 10,
+                      borderWidth: 2,
+                      borderColor: Neutral.black,
+                      backgroundColor: '#E5E7EB',
+                    }}
+                    resizeMode="cover"
+                  />
+                ))}
+              </View>
+            </View>
+          </BrutalCard>
+        ) : null}
 
         {/* Cancel Order (SPEC Section 4: Pre-assigned free, Post-assigned forfeited confirm dialog) */}
         {canCancel && (

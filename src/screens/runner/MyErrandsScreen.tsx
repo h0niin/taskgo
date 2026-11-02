@@ -51,7 +51,7 @@ export function MyErrandsScreen({ navigation }: any) {
   const orders = useStore((s) => s.orders);
   const advanceProgress = useStore((s) => s.advanceProgress);
   const submitProof = useStore((s) => s.submitProof);
-  const dismissRejectedBid = useStore((s) => s.dismissRejectedBid);
+  const dismissBid = useStore((s) => s.dismissBid);
 
   const runnerId = effectiveRunnerId(currentUser, adminMode) || 'u_run_1';
 
@@ -164,19 +164,29 @@ export function MyErrandsScreen({ navigation }: any) {
             ) : (
               filteredBiddingList.map(({ order, thread }) => {
                 const latestOffer = thread.offers[thread.offers.length - 1];
-                const isRejected = thread.status === 'REJECTED';
+                const isInactive =
+                  thread.status === 'REJECTED' || thread.status === 'WITHDRAWN';
                 const needsMyAction =
+                  !isInactive &&
                   latestOffer?.status === 'PENDING' &&
                   latestOffer.from === 'CUSTOMER';
 
                 const card = (
-                  <BrutalCard backgroundColor={isRejected ? '#E5E7EB' : needsMyAction ? '#FEF08A' : Card.cream}>
+                  <BrutalCard backgroundColor={isInactive ? '#E5E7EB' : needsMyAction ? '#FEF08A' : Card.cream}>
                       <View style={{ padding: 16, gap: 10 }}>
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                           <BrutalBadge label={order.category} color="#F97316" />
                           <BrutalBadge
-                            label={isRejected ? 'REJECTED' : needsMyAction ? 'CUSTOMER COUNTERED!' : humanizeStatus(thread.status)}
-                            color={isRejected ? '#EF4444' : needsMyAction ? '#10B981' : Neutral.black}
+                            label={needsMyAction ? 'CUSTOMER COUNTERED!' : humanizeStatus(thread.status)}
+                            color={
+                              thread.status === 'REJECTED'
+                                ? '#EF4444'
+                                : thread.status === 'WITHDRAWN'
+                                ? '#6B7280'
+                                : needsMyAction
+                                ? '#10B981'
+                                : Neutral.black
+                            }
                           />
                         </View>
 
@@ -205,13 +215,14 @@ export function MyErrandsScreen({ navigation }: any) {
                           </Text>
                         </View>
 
-                        {isRejected ? (
+                        {isInactive ? (
                           <BrutalButton
-                            label="Remove Rejected Bid"
+                            label="Remove Bid"
                             color="#EF4444"
-                            fullWidth
-                            size="sm"
-                            onPress={() => dismissRejectedBid(order.id, thread.id)}
+                            textColor={Neutral.white}
+                            size="xs"
+                            onPress={() => dismissBid(order.id, thread.id)}
+                            style={{ alignSelf: 'flex-end' }}
                           />
                         ) : (
                           <BrutalButton
@@ -231,7 +242,7 @@ export function MyErrandsScreen({ navigation }: any) {
                     </BrutalCard>
                 );
 
-                return isRejected ? (
+                return isInactive ? (
                   <View key={thread.id}>{card}</View>
                 ) : (
                   <TouchableOpacity
@@ -321,6 +332,32 @@ export function MyErrandsScreen({ navigation }: any) {
                             : '15 mins'
                         }
                       />
+
+                      {/* Customer Attachments */}
+                      {order.attachments?.length ? (
+                        <View style={{ gap: 6 }}>
+                          <Text style={{ fontWeight: '900', fontSize: 11, textTransform: 'uppercase' }}>
+                            Attachments ({order.attachments.length})
+                          </Text>
+                          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                            {order.attachments.map((uri, index) => (
+                              <Image
+                                key={`${uri}-${index}`}
+                                source={{ uri }}
+                                style={{
+                                  width: 64,
+                                  height: 64,
+                                  borderRadius: 8,
+                                  borderWidth: 2,
+                                  borderColor: Neutral.black,
+                                  backgroundColor: '#E5E7EB',
+                                }}
+                                resizeMode="cover"
+                              />
+                            ))}
+                          </View>
+                        </View>
+                      ) : null}
 
                       {/* Customer Call Button */}
                       <TouchableOpacity

@@ -85,6 +85,8 @@ export interface ErrandOrder {
   category: string;
   stops: LocationStop[];
   edgeCaseInstructions: string;
+  /** Optional reference photos attached when the errand was posted. */
+  attachments?: string[];
   status: OrderStatus;
   progressStep?: ProgressStep;
   distanceKm: number;
