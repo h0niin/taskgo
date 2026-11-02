@@ -2,16 +2,16 @@ import React from 'react';
 import { ScrollView, Text, TouchableOpacity } from 'react-native';
 import { Neutral } from '../theme';
 import type { OrderStatus } from '../types/models';
+import { humanizeStatus } from '../utils/format';
 
 const STATUSES: OrderStatus[] = [
   'PLACED',
   'BIDDING',
-  'AGREED',
-  'AWAITING_DEPOSIT',
+  'AWAITING_PAYMENT',
   'ASSIGNED',
   'IN_PROGRESS',
   'PROOF_SUBMITTED',
-  'AWAITING_FINAL_PAYMENT',
+  'AWAITING_ADDITIONAL_PAYMENT',
   'COMPLETED',
   'CANCELLED',
 ];
@@ -21,9 +21,16 @@ interface OrderStatusFilterProps {
   onChange: (statuses: OrderStatus[]) => void;
   counts: Partial<Record<OrderStatus, number>>;
   allCount: number;
+  statuses?: OrderStatus[];
 }
 
-export function OrderStatusFilter({ value, onChange, counts, allCount }: OrderStatusFilterProps) {
+export function OrderStatusFilter({
+  value,
+  onChange,
+  counts,
+  allCount,
+  statuses = STATUSES,
+}: OrderStatusFilterProps) {
   const toggleStatus = (status: OrderStatus) => {
     onChange(
       value.includes(status)
@@ -34,7 +41,7 @@ export function OrderStatusFilter({ value, onChange, counts, allCount }: OrderSt
 
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-      {(['ALL', ...STATUSES] as const).map((status) => {
+      {(['ALL', ...statuses] as const).map((status) => {
         const isAll = status === 'ALL';
         const selected = isAll ? value.length === 0 : value.includes(status);
         return (
@@ -65,7 +72,7 @@ export function OrderStatusFilter({ value, onChange, counts, allCount }: OrderSt
             >
               {status === 'ALL'
                 ? `ALL (${allCount})`
-                : `${status.replace(/_/g, ' ')} (${counts[status] ?? 0})`}
+                : `${humanizeStatus(status).toUpperCase()} (${counts[status] ?? 0})`}
             </Text>
           </TouchableOpacity>
         );

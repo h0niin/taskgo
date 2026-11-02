@@ -42,7 +42,11 @@ export function ProofReviewScreen({ route, navigation }: any) {
 
   const handleApprove = () => {
     approveProof(orderId);
-    navigation.replace('FinalPayment', { orderId });
+    if ((order.additionalCosts ?? 0) > 0) {
+      navigation.replace('AdditionalPayment', { orderId });
+    } else {
+      navigation.replace('Receipt', { orderId });
+    }
   };
 
   const handleRaiseIssue = () => {
@@ -101,7 +105,7 @@ export function ProofReviewScreen({ route, navigation }: any) {
             Runner Submitted Completion Proof
           </Text>
           <Text style={{ fontWeight: '700', fontSize: 13 }}>
-            Inspect photos of the handover and any store bills before approving final settlement.
+            Inspect photos of the handover and any additional costs before approving.
           </Text>
         </View>
 
@@ -176,23 +180,23 @@ export function ProofReviewScreen({ route, navigation }: any) {
           </View>
         </BrutalCard>
 
-        {/* 2. Store Bill & Reimbursement Card (if purchase made) */}
-        {order.storeBillAmount ? (
+        {/* 2. Additional Costs Card (if any) */}
+        {order.additionalCosts ? (
           <BrutalCard backgroundColor="#FFFFFF">
             <View style={{ padding: 16, gap: 12 }}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                   <ReceiptIcon size={18} color={Neutral.black} strokeWidth={2.5} />
                   <Text style={{ fontWeight: '900', fontSize: 14, textTransform: 'uppercase' }}>
-                    Local Shop Bill Photo
+                    Additional Costs Proof
                   </Text>
                 </View>
-                <BrutalBadge label={`+${formatRupees(order.storeBillAmount)}`} color="#F97316" />
+                <BrutalBadge label={`+${formatRupees(order.additionalCosts)}`} color="#F97316" />
               </View>
 
-              {order.billPhotoUri ? (
+              {order.additionalCostPhotoUri ? (
                 <Image
-                  source={{ uri: order.billPhotoUri }}
+                  source={{ uri: order.additionalCostPhotoUri }}
                   style={{
                     width: '100%',
                     height: 180,
@@ -215,56 +219,52 @@ export function ProofReviewScreen({ route, navigation }: any) {
                 }}
               >
                 <Text style={{ fontWeight: '900', fontSize: 13 }}>
-                  Runner fronted: {formatRupees(order.storeBillAmount)} from pocket.
+                  Runner paid: {formatRupees(order.additionalCosts)} during this errand.
                 </Text>
                 <Text style={{ fontWeight: '700', fontSize: 11, color: '#4B5563', marginTop: 2 }}>
-                  This amount will be added to your final settlement to reimburse the runner.
+                  This amount is due from you in addition to the task fee.
                 </Text>
               </View>
             </View>
           </BrutalCard>
         ) : null}
 
-        {/* Final Amount Calculation Preview */}
-        <BrutalCard backgroundColor={Card.mint}>
-          <View style={{ padding: 16, gap: 8 }}>
-            <Text style={{ fontWeight: '900', fontSize: 13, textTransform: 'uppercase' }}>
-              Final Balance Due Now
-            </Text>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-              <Text style={{ fontWeight: '700', fontSize: 13 }}>Remaining Service Fee:</Text>
-              <Text style={{ fontWeight: '900', fontSize: 13 }}>{formatRupees(order.balanceFee ?? 0)}</Text>
-            </View>
-            {order.storeBillAmount ? (
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                <Text style={{ fontWeight: '700', fontSize: 13 }}>Store Bill Reimbursement:</Text>
-                <Text style={{ fontWeight: '900', fontSize: 13 }}>+{formatRupees(order.storeBillAmount)}</Text>
+        {/* Additional Costs Payment Preview */}
+        {order.additionalCosts ? (
+          <BrutalCard backgroundColor={Card.mint}>
+            <View style={{ padding: 16, gap: 8 }}>
+              <Text style={{ fontWeight: '900', fontSize: 13, textTransform: 'uppercase' }}>
+                Additional Costs Due
+              </Text>
+              <View
+                style={{
+                  borderTopWidth: 2,
+                  borderColor: Neutral.black,
+                  paddingTop: 6,
+                  flexDirection: 'row',
+                  justifyContent: 'space-between',
+                }}
+              >
+                <Text style={{ fontWeight: '900', fontSize: 15, textTransform: 'uppercase' }}>
+                  Total Additional Payment:
+                </Text>
+                <Text style={{ fontWeight: '900', fontSize: 20 }}>
+                  {formatRupees(order.additionalCosts)}
+                </Text>
               </View>
-            ) : null}
-            <View
-              style={{
-                borderTopWidth: 2,
-                borderColor: Neutral.black,
-                paddingTop: 6,
-                flexDirection: 'row',
-                justifyContent: 'space-between',
-              }}
-            >
-              <Text style={{ fontWeight: '900', fontSize: 15, textTransform: 'uppercase' }}>
-                Total Final Payment:
-              </Text>
-              <Text style={{ fontWeight: '900', fontSize: 20 }}>
-                {formatRupees(order.finalBalance ?? ((order.balanceFee ?? 0) + (order.storeBillAmount ?? 0)))}
-              </Text>
             </View>
-          </View>
-        </BrutalCard>
+          </BrutalCard>
+        ) : null}
 
         {/* Action Buttons */}
         {!issueMode ? (
           <View style={{ gap: 10 }}>
             <BrutalButton
-              label="APPROVE PROOF & PAY BALANCE →"
+              label={
+                (order.additionalCosts ?? 0) > 0
+                  ? 'APPROVE PROOF & PAY ADDITIONAL COSTS →'
+                  : 'APPROVE PROOF & COMPLETE →'
+              }
               color={CTA.lime}
               fullWidth
               size="lg"

@@ -1,15 +1,21 @@
 import React from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { BrutalBadge, BrutalButton, BrutalCard } from '../../components';
 import { Canvas, Card, CTA, Neutral } from '../../theme';
-import { useStore } from '../../store';
-import { formatPhone } from '../../utils/format';
+import { effectiveCustomerId, selectCustomerOrders, useStore } from '../../store';
+import { formatDateTime, formatOrderId, formatPhone, humanizeStatus } from '../../utils/format';
 
-export function CustomerProfileScreen() {
+export function CustomerProfileScreen({ navigation }: any) {
   const currentUser = useStore((s) => s.currentUser);
+  const adminMode = useStore((s) => s.adminMode);
+  const orders = useStore((s) => s.orders);
   const logout = useStore((s) => s.logout);
   const simulatorEnabled = useStore((s) => s.simulatorEnabled);
   const toggleSimulator = useStore((s) => s.toggleSimulator);
+  const customerId = effectiveCustomerId(currentUser, adminMode);
+  const historyOrders = selectCustomerOrders(orders, customerId).filter((order) =>
+    ['COMPLETED', 'CANCELLED'].includes(order.status),
+  );
 
   return (
     <ScrollView
@@ -90,6 +96,49 @@ export function CustomerProfileScreen() {
         </BrutalCard>
       )}
 
+      <View style={{ gap: 12 }}>
+        <Text style={{ fontWeight: '900', fontSize: 18, color: Neutral.white, textTransform: 'uppercase' }}>
+          Errand History ({historyOrders.length})
+        </Text>
+        {historyOrders.length === 0 ? (
+          <BrutalCard backgroundColor={Card.cream}>
+            <View style={{ padding: 20, alignItems: 'center' }}>
+              <Text style={{ fontWeight: '700', fontSize: 13, color: '#6B7280' }}>
+                Completed and cancelled errands will appear here.
+              </Text>
+            </View>
+          </BrutalCard>
+        ) : (
+          historyOrders.map((order) => (
+            <TouchableOpacity
+              key={order.id}
+              activeOpacity={0.8}
+              onPress={() => navigation.navigate('OrderDetail', { orderId: order.id })}
+            >
+              <BrutalCard backgroundColor="#E5E7EB">
+                <View style={{ padding: 16, gap: 8 }}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Text style={{ fontWeight: '900', fontSize: 12, color: '#4B5563' }}>
+                      {formatOrderId(order.id)} · {order.category}
+                    </Text>
+                    <BrutalBadge
+                      label={humanizeStatus(order.status)}
+                      color={order.status === 'COMPLETED' ? '#10B981' : '#EF4444'}
+                    />
+                  </View>
+                  <Text style={{ fontWeight: '800', fontSize: 14, color: Neutral.black }}>
+                    {order.stops[0]?.address} → {order.stops[order.stops.length - 1]?.address}
+                  </Text>
+                  <Text style={{ fontWeight: '700', fontSize: 11, color: '#6B7280' }}>
+                    {formatDateTime(order.createdAt)}
+                  </Text>
+                </View>
+              </BrutalCard>
+            </TouchableOpacity>
+          ))
+        )}
+      </View>
+
       <BrutalButton
         label="Log Out"
         color="#EF4444"
@@ -100,4 +149,3 @@ export function CustomerProfileScreen() {
     </ScrollView>
   );
 }
-

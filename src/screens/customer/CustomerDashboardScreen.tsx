@@ -20,7 +20,7 @@ import {
   selectCustomerOrders,
   useStore,
 } from '../../store';
-import { formatOrderId, formatRupees } from '../../utils/format';
+import { formatOrderId, formatOrderStage, formatRupees, humanizeStatus } from '../../utils/format';
 import type { OrderStatus } from '../../types/models';
 import { Bike, Navigation, ArrowRight, Clock, Plus } from 'lucide-react-native';
 
@@ -33,11 +33,23 @@ export function CustomerDashboardScreen({ navigation }: any) {
 
   const customerId = effectiveCustomerId(currentUser, adminMode);
   const myOrders = selectCustomerOrders(orders, customerId);
-  const statusCounts = myOrders.reduce<Partial<Record<OrderStatus, number>>>((counts, order) => {
+  const activeOrders = myOrders.filter(
+    (order) => !['COMPLETED', 'CANCELLED'].includes(order.status),
+  );
+  const customerStatuses: OrderStatus[] = [
+    'PLACED',
+    'BIDDING',
+    'AWAITING_PAYMENT',
+    'ASSIGNED',
+    'IN_PROGRESS',
+    'PROOF_SUBMITTED',
+    'AWAITING_ADDITIONAL_PAYMENT',
+  ];
+  const statusCounts = activeOrders.reduce<Partial<Record<OrderStatus, number>>>((counts, order) => {
     counts[order.status] = (counts[order.status] ?? 0) + 1;
     return counts;
   }, {});
-  const filteredOrders = myOrders.filter(
+  const filteredOrders = activeOrders.filter(
     (order) => statusFilters.length === 0 || statusFilters.includes(order.status),
   );
 
@@ -48,7 +60,7 @@ export function CustomerDashboardScreen({ navigation }: any) {
 
   // Active order for the hard-shadow tracking card (Section 8)
   const activeOrder = myOrders.find((o) =>
-    ['ASSIGNED', 'IN_PROGRESS', 'PROOF_SUBMITTED', 'AWAITING_FINAL_PAYMENT'].includes(o.status),
+    ['ASSIGNED', 'IN_PROGRESS', 'PROOF_SUBMITTED', 'AWAITING_ADDITIONAL_PAYMENT'].includes(o.status),
   );
 
   return (
@@ -78,7 +90,7 @@ export function CustomerDashboardScreen({ navigation }: any) {
               </Text>
             </View>
             <BrutalBadge
-              label={activeOrder.status}
+              label={humanizeStatus(activeOrder.status)}
               color={STATUS_BADGE_COLORS[activeOrder.status] ?? '#10B981'}
             />
           </View>
@@ -102,7 +114,7 @@ export function CustomerDashboardScreen({ navigation }: any) {
                       {activeOrder.assignedRunnerName ?? 'Task Boy'}
                     </Text>
                     <Text style={{ fontWeight: '700', fontSize: 11, color: '#374151' }}>
-                      Step: {activeOrder.progressStep ?? 'On The Way'}
+                      Step: {formatOrderStage(activeOrder)}
                     </Text>
                   </View>
                 </View>
@@ -134,7 +146,7 @@ export function CustomerDashboardScreen({ navigation }: any) {
                       width:
                         activeOrder.status === 'PROOF_SUBMITTED'
                           ? '85%'
-                          : activeOrder.status === 'AWAITING_FINAL_PAYMENT'
+                          : activeOrder.status === 'AWAITING_ADDITIONAL_PAYMENT'
                           ? '95%'
                           : activeOrder.progressStep === 'ON_THE_WAY'
                           ? '65%'
@@ -145,7 +157,7 @@ export function CustomerDashboardScreen({ navigation }: any) {
                   />
                 </View>
                 <Text style={{ fontWeight: '700', fontSize: 10, color: '#1F2937' }}>
-                  Lifecycle Step: {activeOrder.status} ({activeOrder.progressStep ?? 'En route'})
+                  Lifecycle Step: {formatOrderStage(activeOrder)}
                 </Text>
               </View>
 
@@ -236,7 +248,8 @@ export function CustomerDashboardScreen({ navigation }: any) {
         value={statusFilters}
         onChange={setStatusFilters}
         counts={statusCounts}
-        allCount={myOrders.length}
+        allCount={activeOrders.length}
+        statuses={customerStatuses}
       />
       <Text
         style={{
@@ -261,11 +274,17 @@ export function CustomerDashboardScreen({ navigation }: any) {
           <View style={{ padding: 28, alignItems: 'center', gap: 8 }}>
             <Clock size={32} color="#6B7280" />
             <Text style={{ fontWeight: '900', fontSize: 16, textTransform: 'uppercase' }}>
-              {myOrders.length === 0 ? 'No Errands Yet' : 'No Matching Errands'}
+              {activeOrders.length === 0
+                ? myOrders.length === 0
+                  ? 'No Errands Yet'
+                  : 'No Active Errands'
+                : 'No Matching Errands'}
             </Text>
             <Text style={{ fontWeight: '700', fontSize: 13, color: '#6B7280', textAlign: 'center' }}>
-              {myOrders.length === 0
+              {activeOrders.length === 0 && myOrders.length === 0
                 ? 'Create an errand in Kozhikode to receive bids from Task Boys!'
+                : activeOrders.length === 0
+                ? 'Completed and cancelled errands are available in your Profile history.'
                 : `You have no errands with the selected statuses.`}
             </Text>
           </View>
@@ -295,7 +314,7 @@ export function CustomerDashboardScreen({ navigation }: any) {
                         <Text style={{ fontWeight: '900', fontSize: 12 }}>· {order.category}</Text>
                       </View>
                       <BrutalBadge
-                        label={order.status}
+                        label={humanizeStatus(order.status)}
                         color={STATUS_BADGE_COLORS[order.status] ?? Neutral.black}
                       />
                     </View>

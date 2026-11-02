@@ -9,14 +9,13 @@ import {
 import { Canvas, Card, CTA, Neutral } from '../../theme';
 import { useStore } from '../../store';
 import { formatRupees } from '../../utils/format';
-import { ADVANCE_PCT } from '../../utils/pricing';
 import { ArrowLeft, ShieldCheck, Zap } from 'lucide-react-native';
 
-export function AdvancePaymentScreen({ route, navigation }: any) {
+export function TaskPaymentScreen({ route, navigation }: any) {
   const { orderId } = route.params;
 
   const orders = useStore((s) => s.orders);
-  const payAdvance = useStore((s) => s.payAdvance);
+  const payTaskFee = useStore((s) => s.payTaskFee);
 
   const order = orders.find((o) => o.id === orderId);
   const [upiSheetVisible, setUpiSheetVisible] = useState(false);
@@ -29,14 +28,11 @@ export function AdvancePaymentScreen({ route, navigation }: any) {
     );
   }
 
-  const agreedFee = order.agreedFee ?? 100;
-  const advanceAmount = order.advanceAmount ?? Math.round((agreedFee * ADVANCE_PCT) / 100);
-  const balanceFee = order.balanceFee ?? agreedFee - advanceAmount;
+  const agreedFee = order.agreedFee ?? 0;
 
   const handleUpiSuccess = (upiRef: string) => {
-    payAdvance(orderId, 'UPI', upiRef);
+    payTaskFee(orderId, upiRef);
     setUpiSheetVisible(false);
-    // Navigate to order detail to see live progress
     navigation.replace('OrderDetail', { orderId });
   };
 
@@ -64,7 +60,7 @@ export function AdvancePaymentScreen({ route, navigation }: any) {
             letterSpacing: -0.5,
           }}
         >
-          Secure Advance Deposit
+          Secure Payment
         </Text>
       </View>
 
@@ -83,11 +79,11 @@ export function AdvancePaymentScreen({ route, navigation }: any) {
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
             <Zap size={20} color={Neutral.black} strokeWidth={3} />
             <Text style={{ fontWeight: '900', fontSize: 20, textTransform: 'uppercase' }}>
-              Runner Dispatched On Deposit
+              Runner Dispatched On Payment
             </Text>
           </View>
           <Text style={{ fontWeight: '700', fontSize: 13, color: '#1F2937' }}>
-            To dispatch {order.assignedRunnerName ?? 'your Task Boy'}, pay {ADVANCE_PCT}% advance of the agreed fee.
+            Pay the agreed fee to start your errand with {order.assignedRunnerName ?? 'your Task Boy'}.
           </Text>
         </View>
 
@@ -95,7 +91,7 @@ export function AdvancePaymentScreen({ route, navigation }: any) {
         <BrutalCard backgroundColor={Card.cream}>
           <View style={{ padding: 20, gap: 14 }}>
             <Text style={{ fontWeight: '900', fontSize: 15, textTransform: 'uppercase' }}>
-              Deposit Breakdown
+              Payment Breakdown
             </Text>
 
             <View style={{ gap: 10 }}>
@@ -105,24 +101,6 @@ export function AdvancePaymentScreen({ route, navigation }: any) {
                 </Text>
                 <Text style={{ fontWeight: '900', fontSize: 15 }}>
                   {formatRupees(agreedFee)}
-                </Text>
-              </View>
-
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                <Text style={{ fontWeight: '700', fontSize: 14, color: '#4B5563' }}>
-                  Advance Required ({ADVANCE_PCT}%):
-                </Text>
-                <Text style={{ fontWeight: '900', fontSize: 15, color: '#10B981' }}>
-                  {formatRupees(advanceAmount)}
-                </Text>
-              </View>
-
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                <Text style={{ fontWeight: '700', fontSize: 14, color: '#4B5563' }}>
-                  Balance Due Upon Completion:
-                </Text>
-                <Text style={{ fontWeight: '900', fontSize: 15, color: '#6B7280' }}>
-                  {formatRupees(balanceFee)}
                 </Text>
               </View>
 
@@ -140,21 +118,21 @@ export function AdvancePaymentScreen({ route, navigation }: any) {
                   Payable Right Now:
                 </Text>
                 <Text style={{ fontWeight: '900', fontSize: 26, color: Neutral.black }}>
-                  {formatRupees(advanceAmount)}
+                  {formatRupees(agreedFee)}
                 </Text>
               </View>
             </View>
           </View>
         </BrutalCard>
 
-        {/* Payment Method Card — UPI Only for Advance */}
+        {/* Payment Method Card — UPI Only */}
         <BrutalCard backgroundColor="#FFFFFF">
           <View style={{ padding: 18, gap: 12 }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
               <Text style={{ fontWeight: '900', fontSize: 14, textTransform: 'uppercase' }}>
                 Payment Method
               </Text>
-              <BrutalBadge label="UPI MANDATORY" color="#8B5CF6" />
+              <BrutalBadge label="UPI ONLY" color="#8B5CF6" />
             </View>
 
             <View
@@ -172,16 +150,16 @@ export function AdvancePaymentScreen({ route, navigation }: any) {
               <ShieldCheck size={28} color="#6D28D9" strokeWidth={2.5} />
               <View style={{ flex: 1 }}>
                 <Text style={{ fontWeight: '900', fontSize: 14 }}>
-                  Instant UPI Escrow Transfer
+                  Instant UPI Payment
                 </Text>
                 <Text style={{ fontWeight: '700', fontSize: 12, color: '#4B5563' }}>
-                  Held safely. Released to Task Boy upon verification.
+                  GPay / PhonePe / Paytm · Secure checkout
                 </Text>
               </View>
             </View>
 
             <BrutalButton
-              label={`PAY ${formatRupees(advanceAmount)} VIA UPI`}
+              label={`PAY ${formatRupees(agreedFee)} VIA UPI`}
               color={CTA.lime}
               fullWidth
               size="lg"
@@ -195,12 +173,11 @@ export function AdvancePaymentScreen({ route, navigation }: any) {
       {/* Mock UPI Sheet */}
       <UpiPaymentSheet
         visible={upiSheetVisible}
-        amount={advanceAmount}
-        paymentTitle="Advance Errand Deposit"
+        amount={agreedFee}
+        paymentTitle="Task Fee Payment"
         onClose={() => setUpiSheetVisible(false)}
         onSuccess={handleUpiSuccess}
       />
     </View>
   );
 }
-

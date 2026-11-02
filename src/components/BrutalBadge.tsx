@@ -65,12 +65,11 @@ export function BrutalBadge({
 export const STATUS_BADGE_COLORS: Record<string, string> = {
   PLACED:                  '#6B7280', // gray
   BIDDING:                 '#8B5CF6', // purple
-  AGREED:                  '#F97316', // orange
-  AWAITING_DEPOSIT:        '#EAB308', // amber
+  AWAITING_PAYMENT:        '#EAB308', // amber
   ASSIGNED:                '#14B8A6', // teal
   IN_PROGRESS:             '#3B82F6', // blue
   PROOF_SUBMITTED:         '#EC4899', // hotpink
-  AWAITING_FINAL_PAYMENT:  '#F59E0B', // yellow-orange
+  AWAITING_ADDITIONAL_PAYMENT: '#F59E0B', // yellow-orange
   COMPLETED:               '#10B981', // emerald
   CANCELLED:               '#EF4444', // red
 };

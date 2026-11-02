@@ -18,7 +18,7 @@ import {
 import { Canvas, Card, CTA, Neutral } from '../../theme';
 import { useStore } from '../../store';
 import { skipSimulationAhead } from '../../sim';
-import { formatOrderId, formatPhone, formatRupees } from '../../utils/format';
+import { formatOrderId, formatOrderStage, formatPhone, formatRupees, humanizeStatus } from '../../utils/format';
 import {
   ArrowLeft,
   Bike,
@@ -53,7 +53,7 @@ export function OrderDetailScreen({ route, navigation }: any) {
   const pickup = order.stops[0]?.address ?? 'Pickup';
   const dropoff = order.stops[order.stops.length - 1]?.address ?? 'Dropoff';
 
-  const isPreAssigned = ['PLACED', 'BIDDING', 'AGREED', 'AWAITING_DEPOSIT'].includes(order.status);
+  const isPreAssigned = ['PLACED', 'BIDDING', 'AWAITING_PAYMENT'].includes(order.status);
   const isPostAssigned = ['ASSIGNED', 'IN_PROGRESS'].includes(order.status);
   const canCancel = isPreAssigned || isPostAssigned;
 
@@ -88,7 +88,7 @@ export function OrderDetailScreen({ route, navigation }: any) {
             {formatOrderId(order.id)}
           </Text>
           <BrutalBadge
-            label={order.status}
+            label={humanizeStatus(order.status)}
             color={STATUS_BADGE_COLORS[order.status] ?? Neutral.black}
           />
         </View>
@@ -96,7 +96,7 @@ export function OrderDetailScreen({ route, navigation }: any) {
 
       <ScrollView contentContainerStyle={{ padding: 16, gap: 16 }}>
         {/* Status Action Cards (State Machine Junctions) */}
-        {order.status === 'AWAITING_DEPOSIT' && (
+        {order.status === 'AWAITING_PAYMENT' && (
           <View
             style={{
               backgroundColor: CTA.lime,
@@ -114,15 +114,15 @@ export function OrderDetailScreen({ route, navigation }: any) {
               <BrutalBadge label={`FEE: ${formatRupees(order.agreedFee ?? 0)}`} color={Neutral.black} />
             </View>
             <Text style={{ fontWeight: '700', fontSize: 13, color: '#1F2937' }}>
-              Pay {formatRupees(order.advanceAmount ?? 0)} advance deposit to dispatch {order.assignedRunnerName}.
+              Pay {formatRupees(order.agreedFee ?? 0)} to start your errand with {order.assignedRunnerName}.
             </Text>
             <BrutalButton
-              label={`Pay Advance (${formatRupees(order.advanceAmount ?? 0)}) →`}
+              label={`Pay ${formatRupees(order.agreedFee ?? 0)} via UPI →`}
               color={Neutral.black}
               textColor={Neutral.white}
               fullWidth
               size="md"
-              onPress={() => navigation.navigate('AdvancePayment', { orderId })}
+              onPress={() => navigation.navigate('TaskPayment', { orderId })}
               style={{ marginTop: 4 }}
             />
           </View>
@@ -143,7 +143,7 @@ export function OrderDetailScreen({ route, navigation }: any) {
               📸 Proof Submitted
             </Text>
             <Text style={{ fontWeight: '700', fontSize: 13, color: '#374151' }}>
-              {order.assignedRunnerName} has submitted drop-off photos and shop bills for your approval.
+              {order.assignedRunnerName} has submitted drop-off photos and additional cost proof for your approval.
             </Text>
             <BrutalButton
               label="Review Proof Photos & Bill →"
@@ -156,7 +156,7 @@ export function OrderDetailScreen({ route, navigation }: any) {
           </View>
         )}
 
-        {order.status === 'AWAITING_FINAL_PAYMENT' && (
+        {order.status === 'AWAITING_ADDITIONAL_PAYMENT' && (
           <View
             style={{
               backgroundColor: '#A7F3D0',
@@ -168,17 +168,17 @@ export function OrderDetailScreen({ route, navigation }: any) {
             }}
           >
             <Text style={{ fontWeight: '900', fontSize: 18, textTransform: 'uppercase' }}>
-              💰 Ready for Final Settlement
+              💰 Additional Costs Due
             </Text>
             <Text style={{ fontWeight: '700', fontSize: 13, color: '#065F46' }}>
-              Proof approved! Settle the final balance of {formatRupees(order.finalBalance ?? 0)}.
+              Proof approved! Pay the additional costs of {formatRupees(order.additionalCosts ?? 0)}.
             </Text>
             <BrutalButton
-              label={`Pay Final Balance (${formatRupees(order.finalBalance ?? 0)}) →`}
+              label={`Pay Additional Costs (${formatRupees(order.additionalCosts ?? 0)}) →`}
               color={CTA.lime}
               fullWidth
               size="md"
-              onPress={() => navigation.navigate('FinalPayment', { orderId })}
+              onPress={() => navigation.navigate('AdditionalPayment', { orderId })}
               style={{ marginTop: 4 }}
             />
           </View>
@@ -239,8 +239,13 @@ export function OrderDetailScreen({ route, navigation }: any) {
             <StaticMapCard
               pickupAddress={pickup}
               dropoffAddress={dropoff}
-              currentStep={order.progressStep ?? 'En route'}
-              etaText={order.progressStep === 'ON_THE_WAY' ? '5 mins' : '12-15 mins'}
+              etaText={
+                order.status === 'PROOF_SUBMITTED'
+                  ? undefined
+                  : order.progressStep === 'ON_THE_WAY'
+                  ? '5 mins'
+                  : '12-15 mins'
+              }
             />
 
             {/* Runner Contact Card */}
@@ -251,7 +256,7 @@ export function OrderDetailScreen({ route, navigation }: any) {
                     {order.assignedRunnerName ?? 'Assigned Task Boy'}
                   </Text>
                   <Text style={{ fontWeight: '700', fontSize: 12, color: '#4B5563' }}>
-                    Status: {order.progressStep ?? 'Dispatched'}
+                    Status: {formatOrderStage(order)}
                   </Text>
                 </View>
                 <TouchableOpacity
@@ -454,7 +459,7 @@ export function OrderDetailScreen({ route, navigation }: any) {
         {/* Cancel Order (SPEC Section 4: Pre-assigned free, Post-assigned forfeited confirm dialog) */}
         {canCancel && (
           <BrutalButton
-            label={isPreAssigned ? 'Cancel Errand (No Charge)' : 'Cancel Errand (Advance Forfeited)'}
+            label={isPreAssigned ? 'Cancel Errand (No Charge)' : 'Cancel Errand (Payment Forfeited)'}
             color="#EF4444"
             fullWidth
             size="sm"
@@ -516,16 +521,16 @@ export function OrderDetailScreen({ route, navigation }: any) {
               }}
             >
               <Text style={{ fontWeight: '900', fontSize: 13, color: '#DC2626', textTransform: 'uppercase' }}>
-                Advance Deposit Forfeited
+                Payment Forfeited
               </Text>
               <Text style={{ fontWeight: '700', fontSize: 12, color: '#7F1D1D' }}>
-                Because {order.assignedRunnerName} has already been dispatched to Mavoor Road / Kozhikode locations, your paid advance of {formatRupees(order.advanceAmount ?? 0)} will be paid to the runner as a travel compensation.
+                Because {order.assignedRunnerName} has already been dispatched to Mavoor Road / Kozhikode locations, your paid fee of {formatRupees(order.agreedFee ?? 0)} will be paid to the runner as a travel compensation.
               </Text>
             </View>
 
             <View style={{ gap: 10 }}>
               <BrutalButton
-                label="Confirm Cancel (Forfeit Advance)"
+                label="Confirm Cancel (Forfeit Payment)"
                 color="#EF4444"
                 fullWidth
                 size="md"

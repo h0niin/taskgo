@@ -418,7 +418,7 @@ export function CreateOrderScreen({ navigation }: any) {
           <TextInput
             multiline
             numberOfLines={4}
-            placeholder="e.g. If specific brand unavailable, call me before replacing. Keep all printed bills for reimbursement."
+            placeholder="e.g. If specific brand unavailable, call me before replacing. Keep all receipts for additional costs."
             placeholderTextColor="#9CA3AF"
             value={instructions}
             onChangeText={(t) => {

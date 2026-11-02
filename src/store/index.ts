@@ -16,7 +16,6 @@ import type {
   ProgressStep,
   User,
 } from '../types/models';
-import { calcPayments } from '../utils/pricing';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -59,25 +58,17 @@ interface AppState {
 
   acceptBid: (orderId: string, threadId: string) => void;
 
-  /** Customer pays advance; order → ASSIGNED. */
-  payAdvance: (
-    orderId: string,
-    method: 'UPI',
-    upiRef: string,
-  ) => void;
+  /** Customer pays the full agreed fee; order → ASSIGNED. */
+  payTaskFee: (orderId: string, upiRef: string) => void;
 
-  /** Customer approves proof; order → AWAITING_FINAL_PAYMENT. */
+  /** Customer approves proof; order → AWAITING_ADDITIONAL_PAYMENT or COMPLETED. */
   approveProof: (orderId: string) => void;
 
   /** Customer raises an issue on proof. */
   raiseIssue: (orderId: string) => void;
 
-  /** Customer pays final balance; order → COMPLETED (UPI) or waits for runner confirm (CASH). */
-  payFinal: (
-    orderId: string,
-    method: 'UPI' | 'CASH',
-    upiRef?: string,
-  ) => void;
+  /** Customer pays additional costs; order → COMPLETED. */
+  payAdditionalCosts: (orderId: string, upiRef: string) => void;
 
   /** Customer saves rating + review after completion. */
   rateOrder: (orderId: string, rating: number, review: string) => void;
@@ -109,6 +100,7 @@ interface AppState {
   ) => void;
 
   withdrawBid: (orderId: string, threadId: string) => void;
+  dismissRejectedBid: (orderId: string, threadId: string) => void;
 
   runnerCounter: (
     orderId: string,
@@ -126,12 +118,9 @@ interface AppState {
   submitProof: (params: {
     orderId: string;
     completionPhotoUri: string;
-    billPhotoUri?: string;
-    storeBillAmount?: number;
+    additionalCostPhotoUri?: string;
+    additionalCosts?: number;
   }) => void;
-
-  /** Runner confirms cash received; order → COMPLETED. */
-  confirmCashReceived: (orderId: string) => void;
 
   // ── Utility ───────────────────────────────────────────────────────────────
   /** Expire a pending offer (called by simulator / countdown timer). */
@@ -219,7 +208,7 @@ export const useStore = create<AppState>((set, get) => ({
     set((s) => ({
       orders: s.orders.map((o) => {
         if (o.id !== orderId) return o;
-        if (!['PLACED', 'BIDDING', 'AGREED'].includes(o.status)) return o;
+        if (!['PLACED', 'BIDDING'].includes(o.status)) return o;
 
         const winThread = o.threads.find((t) => t.id === threadId);
         if (!winThread) return o;
@@ -228,14 +217,11 @@ export const useStore = create<AppState>((set, get) => ({
         if (!latestOffer || latestOffer.status !== 'PENDING') return o;
 
         const agreedFee = latestOffer.price;
-        const { advanceAmount, balanceFee } = calcPayments(agreedFee);
 
         return {
           ...o,
-          status: 'AWAITING_DEPOSIT',
+          status: 'AWAITING_PAYMENT',
           agreedFee,
-          advanceAmount,
-          balanceFee,
           assignedRunnerId: winThread.runnerId,
           assignedRunnerName: winThread.runnerName,
           threads: o.threads.map((t) => {
@@ -394,6 +380,23 @@ export const useStore = create<AppState>((set, get) => ({
     }));
   },
 
+  dismissRejectedBid(orderId, threadId) {
+    set((s) => ({
+      orders: s.orders.map((o) =>
+        o.id !== orderId
+          ? o
+          : {
+              ...o,
+              threads: o.threads.map((t) =>
+                t.id === threadId && t.status === 'REJECTED'
+                  ? { ...t, dismissedByRunner: true }
+                  : t,
+              ),
+            },
+      ),
+    }));
+  },
+
   // ── Runner counter ─────────────────────────────────────────────────────────
   runnerCounter(orderId, threadId, price, note) {
     set((s) => ({
@@ -433,14 +436,11 @@ export const useStore = create<AppState>((set, get) => ({
         if (!latestOffer || latestOffer.from !== 'CUSTOMER') return o;
 
         const agreedFee = latestOffer.price;
-        const { advanceAmount, balanceFee } = calcPayments(agreedFee);
 
         return {
           ...o,
-          status: 'AWAITING_DEPOSIT',
+          status: 'AWAITING_PAYMENT',
           agreedFee,
-          advanceAmount,
-          balanceFee,
           assignedRunnerId: thread.runnerId,
           assignedRunnerName: thread.runnerName,
           threads: o.threads.map((t) => {
@@ -484,18 +484,17 @@ export const useStore = create<AppState>((set, get) => ({
     }));
   },
 
-  // ── Pay advance ────────────────────────────────────────────────────────────
-  payAdvance(orderId, method, upiRef) {
+  // ── Pay full task fee ──────────────────────────────────────────────────────
+  payTaskFee(orderId, upiRef) {
     set((s) => ({
       orders: s.orders.map((o) => {
         if (o.id !== orderId) return o;
-        if (o.status !== 'AWAITING_DEPOSIT') return o;
+        if (o.status !== 'AWAITING_PAYMENT') return o;
 
         const payment: Payment = {
           id: uid('pay'),
-          kind: 'ADVANCE',
-          amount: o.advanceAmount ?? 0,
-          method,
+          kind: 'TASK_FEE',
+          amount: o.agreedFee ?? 0,
           paidAt: iso(),
           upiRef,
         };
@@ -521,26 +520,20 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   // ── Submit proof ───────────────────────────────────────────────────────────
-  submitProof({ orderId, completionPhotoUri, billPhotoUri, storeBillAmount }) {
+  submitProof({ orderId, completionPhotoUri, additionalCostPhotoUri, additionalCosts }) {
     set((s) => ({
       orders: s.orders.map((o) => {
         if (o.id !== orderId) return o;
         if (o.status !== 'IN_PROGRESS') return o;
 
-        const bill = storeBillAmount ?? 0;
-        const { finalBalance, totalPayable } = calcPayments(
-          o.agreedFee ?? 0,
-          bill,
-        );
+        const costs = Math.max(0, Math.round(additionalCosts ?? 0));
 
         return {
           ...o,
           status: 'PROOF_SUBMITTED',
           completionPhotoUri,
-          billPhotoUri,
-          storeBillAmount: bill,
-          finalBalance,
-          totalPayable,
+          additionalCostPhotoUri: costs > 0 ? additionalCostPhotoUri : undefined,
+          additionalCosts: costs,
         };
       }),
     }));
@@ -552,7 +545,13 @@ export const useStore = create<AppState>((set, get) => ({
       orders: s.orders.map((o) => {
         if (o.id !== orderId) return o;
         if (o.status !== 'PROOF_SUBMITTED') return o;
-        return { ...o, status: 'AWAITING_FINAL_PAYMENT' };
+        const hasAdditionalCosts = (o.additionalCosts ?? 0) > 0;
+        return {
+          ...o,
+          status: hasAdditionalCosts
+            ? 'AWAITING_ADDITIONAL_PAYMENT'
+            : 'COMPLETED',
+        };
       }),
     }));
   },
@@ -566,39 +565,26 @@ export const useStore = create<AppState>((set, get) => ({
     }));
   },
 
-  // ── Pay final ─────────────────────────────────────────────────────────────
-  payFinal(orderId, method, upiRef) {
+  // ── Pay additional costs ───────────────────────────────────────────────────
+  payAdditionalCosts(orderId, upiRef) {
     set((s) => ({
       orders: s.orders.map((o) => {
         if (o.id !== orderId) return o;
-        if (o.status !== 'AWAITING_FINAL_PAYMENT') return o;
+        if (o.status !== 'AWAITING_ADDITIONAL_PAYMENT') return o;
 
         const payment: Payment = {
           id: uid('pay'),
-          kind: 'FINAL',
-          amount: o.finalBalance ?? 0,
-          method,
+          kind: 'ADDITIONAL_COST',
+          amount: o.additionalCosts ?? 0,
           paidAt: iso(),
           upiRef,
         };
 
-        // UPI → immediately COMPLETED; CASH → wait for runner confirmation
         return {
           ...o,
-          status: method === 'UPI' ? 'COMPLETED' : o.status,
+          status: 'COMPLETED',
           payments: [...o.payments, payment],
         };
-      }),
-    }));
-  },
-
-  // ── Confirm cash received (runner) ────────────────────────────────────────
-  confirmCashReceived(orderId) {
-    set((s) => ({
-      orders: s.orders.map((o) => {
-        if (o.id !== orderId) return o;
-        if (o.status !== 'AWAITING_FINAL_PAYMENT') return o;
-        return { ...o, status: 'COMPLETED' };
       }),
     }));
   },
@@ -668,7 +654,7 @@ export const selectRunnerActive = (
   orders.filter(
     (o) =>
       o.assignedRunnerId === runnerId &&
-      ['ASSIGNED', 'IN_PROGRESS', 'PROOF_SUBMITTED', 'AWAITING_FINAL_PAYMENT'].includes(o.status),
+      ['ASSIGNED', 'IN_PROGRESS', 'PROOF_SUBMITTED', 'AWAITING_ADDITIONAL_PAYMENT'].includes(o.status),
   );
 
 /** Completed orders for a runner. */
@@ -680,7 +666,7 @@ export const selectRunnerDone = (
     (o) => o.assignedRunnerId === runnerId && o.status === 'COMPLETED',
   );
 
-/** All threads a runner has open across all orders. */
+/** Open and not-yet-dismissed rejected bid threads for a runner. */
 export const selectRunnerBiddingThreads = (
   orders: ErrandOrder[],
   runnerId: string,
@@ -690,7 +676,8 @@ export const selectRunnerBiddingThreads = (
     for (const thread of order.threads) {
       if (
         thread.runnerId === runnerId &&
-        thread.status === 'OPEN'
+        (thread.status === 'OPEN' ||
+          (thread.status === 'REJECTED' && !thread.dismissedByRunner))
       ) {
         result.push({ order, thread });
       }
@@ -709,4 +696,3 @@ export const counterCount = (thread: BidThread): number =>
   thread.offers.filter(
     (o) => o.status === 'COUNTERED' || o.status === 'PENDING',
   ).length - 1; // subtract the original bid
-

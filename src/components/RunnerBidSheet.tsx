@@ -10,7 +10,7 @@ import { BrutalButton } from './BrutalButton';
 import { BrutalBadge } from './BrutalBadge';
 import { BidDetailsModal } from './BidDetailsModal';
 import { Card, CTA, Neutral } from '../theme';
-import { formatDistance, formatRupees } from '../utils/format';
+import { formatDistance, formatRupees, humanizeStatus } from '../utils/format';
 import type { ErrandOrder } from '../types/models';
 import { Bike, Clock, Phone, MapPin, AlertCircle, CheckCircle } from 'lucide-react-native';
 
@@ -23,6 +23,7 @@ interface RunnerBidSheetProps {
   onSubmitBid: (orderId: string, price: number, note: string) => void;
   onEditBid?: (orderId: string, threadId: string, price: number, note: string) => void;
   onWithdrawBid?: (orderId: string, threadId: string) => void;
+  onDismissRejectedBid?: (orderId: string, threadId: string) => void;
   onOpenNegotiation?: (orderId: string, threadId: string) => void;
 }
 
@@ -35,6 +36,7 @@ export function RunnerBidSheet({
   onSubmitBid,
   onEditBid,
   onWithdrawBid,
+  onDismissRejectedBid,
   onOpenNegotiation,
 }: RunnerBidSheetProps) {
   const [price, setPrice] = useState('');
@@ -49,6 +51,7 @@ export function RunnerBidSheet({
   const myLatestOffer = existingThread
     ? existingThread.offers[existingThread.offers.length - 1]
     : null;
+  const isRejected = existingThread?.status === 'REJECTED';
 
   const canEditOrWithdraw =
     existingThread &&
@@ -277,7 +280,7 @@ export function RunnerBidSheet({
           ) : (
             <View
               style={{
-                backgroundColor: Card.mint,
+                backgroundColor: isRejected ? '#E5E7EB' : Card.mint,
                 borderWidth: 3,
                 borderColor: Neutral.black,
                 borderRadius: 16,
@@ -287,9 +290,12 @@ export function RunnerBidSheet({
             >
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Text style={{ fontWeight: '900', fontSize: 14, textTransform: 'uppercase' }}>
-                  Your Active Bid:
+                  {isRejected ? 'Rejected Bid:' : 'Your Active Bid:'}
                 </Text>
-                <BrutalBadge label={existingThread.status} color="#10B981" />
+                <BrutalBadge
+                  label={humanizeStatus(existingThread.status)}
+                  color={isRejected ? '#EF4444' : '#10B981'}
+                />
               </View>
 
               <Text style={{ fontWeight: '900', fontSize: 28, color: Neutral.black }}>
@@ -300,18 +306,31 @@ export function RunnerBidSheet({
               </Text>
 
               <View style={{ gap: 8, marginTop: 4 }}>
-                <BrutalButton
-                  label="Open Negotiation Thread →"
-                  color={CTA.lime}
-                  fullWidth
-                  size="md"
-                  onPress={() => {
-                    onClose();
-                    onOpenNegotiation?.(order.id, existingThread.id);
-                  }}
-                />
+                {isRejected ? (
+                  <BrutalButton
+                    label="Remove Rejected Bid"
+                    color="#EF4444"
+                    fullWidth
+                    size="md"
+                    onPress={() => {
+                      onDismissRejectedBid?.(order.id, existingThread.id);
+                      onClose();
+                    }}
+                  />
+                ) : (
+                  <BrutalButton
+                    label="Open Negotiation Thread →"
+                    color={CTA.lime}
+                    fullWidth
+                    size="md"
+                    onPress={() => {
+                      onClose();
+                      onOpenNegotiation?.(order.id, existingThread.id);
+                    }}
+                  />
+                )}
 
-                {canEditOrWithdraw && (
+                {!isRejected && canEditOrWithdraw && (
                   <View style={{ flexDirection: 'row', gap: 8 }}>
                     <View style={{ flex: 1 }}>
                       <BrutalButton

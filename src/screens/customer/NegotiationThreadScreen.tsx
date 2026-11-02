@@ -16,7 +16,7 @@ import {
 } from '../../components';
 import { Canvas, Card, CTA, Neutral } from '../../theme';
 import { counterCount, useStore } from '../../store';
-import { formatDateTime, formatRupees } from '../../utils/format';
+import { formatDateTime, formatRupees, humanizeStatus } from '../../utils/format';
 import { ArrowLeft, Clock, MessageSquare, AlertCircle } from 'lucide-react-native';
 
 export function NegotiationThreadScreen({ route, navigation }: any) {
@@ -55,7 +55,7 @@ export function NegotiationThreadScreen({ route, navigation }: any) {
 
   const handleAccept = () => {
     acceptBid(orderId, threadId);
-    navigation.navigate('AdvancePayment', { orderId });
+    navigation.navigate('TaskPayment', { orderId });
   };
 
   const handleReject = () => {
@@ -93,7 +93,7 @@ export function NegotiationThreadScreen({ route, navigation }: any) {
           </Text>
         </TouchableOpacity>
 
-        <BrutalBadge label={`Thread: ${thread.status}`} color={CTA.violet} />
+        <BrutalBadge label={`Thread: ${humanizeStatus(thread.status)}`} color={CTA.violet} />
       </View>
 
       <KeyboardAwareScrollView
@@ -160,7 +160,7 @@ export function NegotiationThreadScreen({ route, navigation }: any) {
                         {isCustomer ? 'Your Counter Offer' : `${thread.runnerName} Quote`}
                       </Text>
                       <BrutalBadge
-                        label={offer.status}
+                        label={humanizeStatus(offer.status)}
                         color={
                           offer.status === 'ACCEPTED'
                             ? '#10B981'
@@ -293,12 +293,12 @@ export function NegotiationThreadScreen({ route, navigation }: any) {
               <Text style={{ fontWeight: '900', fontSize: 16, textAlign: 'center' }}>
                 You agreed on {formatRupees(order.agreedFee ?? latestOffer.price)} with {thread.runnerName}!
               </Text>
-              {order.status === 'AWAITING_DEPOSIT' && (
+              {order.status === 'AWAITING_PAYMENT' && (
                 <BrutalButton
-                  label="Proceed to Advance Deposit →"
+                  label="Proceed to Payment →"
                   color={CTA.lime}
                   fullWidth
-                  onPress={() => navigation.navigate('AdvancePayment', { orderId })}
+                  onPress={() => navigation.navigate('TaskPayment', { orderId })}
                   style={{ marginTop: 8 }}
                 />
               )}

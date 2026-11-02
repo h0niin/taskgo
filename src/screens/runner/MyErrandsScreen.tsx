@@ -24,7 +24,11 @@ import {
   selectRunnerDone,
   useStore,
 } from '../../store';
-import { formatDateTime, formatRupees } from '../../utils/format';
+import {
+  formatDateTime,
+  formatRupees,
+  humanizeStatus,
+} from '../../utils/format';
 import type { ErrandOrder, OrderStatus, ProgressStep } from '../../types/models';
 import {
   Bike,
@@ -47,7 +51,7 @@ export function MyErrandsScreen({ navigation }: any) {
   const orders = useStore((s) => s.orders);
   const advanceProgress = useStore((s) => s.advanceProgress);
   const submitProof = useStore((s) => s.submitProof);
-  const confirmCashReceived = useStore((s) => s.confirmCashReceived);
+  const dismissRejectedBid = useStore((s) => s.dismissRejectedBid);
 
   const runnerId = effectiveRunnerId(currentUser, adminMode) || 'u_run_1';
 
@@ -61,7 +65,7 @@ export function MyErrandsScreen({ navigation }: any) {
   );
   const otherList = runnerOrders.filter(
     (order) =>
-      ['AGREED', 'AWAITING_DEPOSIT', 'CANCELLED'].includes(order.status) &&
+      ['AWAITING_PAYMENT', 'CANCELLED'].includes(order.status) &&
       (statusFilters.length === 0 || statusFilters.includes(order.status)),
   );
   const filteredBiddingList = biddingList.filter(
@@ -82,14 +86,12 @@ export function MyErrandsScreen({ navigation }: any) {
     : biddingList.length > 0;
   const showActive = statusFilters.length
     ? statusFilters.some((status) =>
-        ['ASSIGNED', 'IN_PROGRESS', 'PROOF_SUBMITTED', 'AWAITING_FINAL_PAYMENT'].includes(status),
+        ['ASSIGNED', 'IN_PROGRESS', 'PROOF_SUBMITTED', 'AWAITING_ADDITIONAL_PAYMENT'].includes(status),
       )
     : activeList.length > 0;
-  const showDone = statusFilters.length
-    ? statusFilters.includes('COMPLETED')
-    : doneList.length > 0;
+  const showDoneOrders = statusFilters.length === 0 || statusFilters.includes('COMPLETED');
   const showOther = statusFilters.length
-    ? statusFilters.some((status) => ['AGREED', 'AWAITING_DEPOSIT', 'CANCELLED'].includes(status))
+    ? statusFilters.some((status) => ['AWAITING_PAYMENT', 'CANCELLED'].includes(status))
     : otherList.length > 0;
 
   const handleAdvanceStep = (orderId: string, nextStep: ProgressStep) => {
@@ -103,15 +105,15 @@ export function MyErrandsScreen({ navigation }: any) {
 
   const handleSubmitProof = (data: {
     completionPhotoUri: string;
-    billPhotoUri?: string;
-    storeBillAmount?: number;
+    additionalCostPhotoUri?: string;
+    additionalCosts?: number;
   }) => {
     if (!selectedProofOrder) return;
     submitProof({
       orderId: selectedProofOrder.id,
       completionPhotoUri: data.completionPhotoUri,
-      billPhotoUri: data.billPhotoUri,
-      storeBillAmount: data.storeBillAmount,
+      additionalCostPhotoUri: data.additionalCostPhotoUri,
+      additionalCosts: data.additionalCosts,
     });
   };
 
@@ -162,28 +164,19 @@ export function MyErrandsScreen({ navigation }: any) {
             ) : (
               filteredBiddingList.map(({ order, thread }) => {
                 const latestOffer = thread.offers[thread.offers.length - 1];
+                const isRejected = thread.status === 'REJECTED';
                 const needsMyAction =
                   latestOffer?.status === 'PENDING' &&
                   latestOffer.from === 'CUSTOMER';
 
-                return (
-                  <TouchableOpacity
-                    key={thread.id}
-                    activeOpacity={0.8}
-                    onPress={() =>
-                      navigation.navigate('RunnerNegotiation', {
-                        orderId: order.id,
-                        threadId: thread.id,
-                      })
-                    }
-                  >
-                    <BrutalCard backgroundColor={needsMyAction ? '#FEF08A' : Card.cream}>
+                const card = (
+                  <BrutalCard backgroundColor={isRejected ? '#E5E7EB' : needsMyAction ? '#FEF08A' : Card.cream}>
                       <View style={{ padding: 16, gap: 10 }}>
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                           <BrutalBadge label={order.category} color="#F97316" />
                           <BrutalBadge
-                            label={needsMyAction ? 'CUSTOMER COUNTERED!' : thread.status}
-                            color={needsMyAction ? '#10B981' : Neutral.black}
+                            label={isRejected ? 'REJECTED' : needsMyAction ? 'CUSTOMER COUNTERED!' : humanizeStatus(thread.status)}
+                            color={isRejected ? '#EF4444' : needsMyAction ? '#10B981' : Neutral.black}
                           />
                         </View>
 
@@ -212,20 +205,46 @@ export function MyErrandsScreen({ navigation }: any) {
                           </Text>
                         </View>
 
-                        <BrutalButton
-                          label={needsMyAction ? 'Respond to Counter →' : 'View Thread →'}
-                          color={CTA.lime}
-                          fullWidth
-                          size="sm"
-                          onPress={() =>
-                            navigation.navigate('RunnerNegotiation', {
-                              orderId: order.id,
-                              threadId: thread.id,
-                            })
-                          }
-                        />
+                        {isRejected ? (
+                          <BrutalButton
+                            label="Remove Rejected Bid"
+                            color="#EF4444"
+                            fullWidth
+                            size="sm"
+                            onPress={() => dismissRejectedBid(order.id, thread.id)}
+                          />
+                        ) : (
+                          <BrutalButton
+                            label={needsMyAction ? 'Respond to Counter →' : 'View Thread →'}
+                            color={CTA.lime}
+                            fullWidth
+                            size="sm"
+                            onPress={() =>
+                              navigation.navigate('RunnerNegotiation', {
+                                orderId: order.id,
+                                threadId: thread.id,
+                              })
+                            }
+                          />
+                        )}
                       </View>
                     </BrutalCard>
+                );
+
+                return isRejected ? (
+                  <View key={thread.id}>{card}</View>
+                ) : (
+                  <TouchableOpacity
+                    key={thread.id}
+                    activeOpacity={0.8}
+                    onPress={() =>
+                      navigation.navigate('RunnerNegotiation', {
+                        orderId: order.id,
+                        threadId: thread.id,
+                      })
+                    }
+                  >
+                    {card}
                   </TouchableOpacity>
                 );
               })
@@ -244,7 +263,7 @@ export function MyErrandsScreen({ navigation }: any) {
                     No Active Tasks
                   </Text>
                   <Text style={{ fontWeight: '700', fontSize: 13, color: '#6B7280', textAlign: 'center' }}>
-                    Tasks will appear here as soon as a customer accepts your bid and deposits the advance!
+                    Tasks will appear here as soon as a customer accepts your bid and pays the task fee!
                   </Text>
                 </View>
               </BrutalCard>
@@ -254,10 +273,6 @@ export function MyErrandsScreen({ navigation }: any) {
                 const isAssigned = order.status === 'ASSIGNED';
                 const isInProgress = order.status === 'IN_PROGRESS';
                 const isProofSubmitted = order.status === 'PROOF_SUBMITTED';
-                const isAwaitingFinalPayment = order.status === 'AWAITING_FINAL_PAYMENT';
-                const hasCashPending = order.payments.some(
-                  (p) => p.kind === 'FINAL' && p.method === 'CASH',
-                );
 
                 // Sequential steps status:
                 const isArrived =
@@ -278,7 +293,7 @@ export function MyErrandsScreen({ navigation }: any) {
                     <View style={{ padding: 18, gap: 14 }}>
                       {/* Top Meta */}
                       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <BrutalBadge label={order.status} color="#14B8A6" />
+                        <BrutalBadge label={humanizeStatus(order.status)} color="#14B8A6" />
                         <Text style={{ fontWeight: '900', fontSize: 16 }}>
                           Locked Fee: {formatRupees(order.agreedFee ?? 0)}
                         </Text>
@@ -298,8 +313,13 @@ export function MyErrandsScreen({ navigation }: any) {
                       <StaticMapCard
                         pickupAddress={order.stops[0]?.address}
                         dropoffAddress={order.stops[order.stops.length - 1]?.address}
-                        currentStep={step ?? 'En route'}
-                        etaText={step === 'ON_THE_WAY' ? '5 mins' : '15 mins'}
+                        etaText={
+                          isProofSubmitted
+                            ? undefined
+                            : step === 'ON_THE_WAY'
+                            ? '5 mins'
+                            : '15 mins'
+                        }
                       />
 
                       {/* Customer Call Button */}
@@ -322,35 +342,6 @@ export function MyErrandsScreen({ navigation }: any) {
                           Call Customer for Doubts.
                         </Text>
                       </TouchableOpacity>
-
-                      {/* Cash Handover Confirmation CTA */}
-                      {isAwaitingFinalPayment && hasCashPending && (
-                        <View
-                          style={{
-                            backgroundColor: CTA.lime,
-                            borderWidth: 3,
-                            borderColor: Neutral.black,
-                            borderRadius: 14,
-                            padding: 14,
-                            gap: 8,
-                          }}
-                        >
-                          <Text style={{ fontWeight: '900', fontSize: 14, textTransform: 'uppercase' }}>
-                            💵 Customer Selected Cash Payment
-                          </Text>
-                          <Text style={{ fontWeight: '700', fontSize: 12 }}>
-                            Collect {formatRupees(order.finalBalance ?? 0)} in hand from customer, then confirm below:
-                          </Text>
-                          <BrutalButton
-                            label="CONFIRM CASH RECEIVED"
-                            color={Neutral.black}
-                            textColor={Neutral.white}
-                            fullWidth
-                            size="md"
-                            onPress={() => confirmCashReceived(order.id)}
-                          />
-                        </View>
-                      )}
 
                       {/* Sequential Execution Buttons (SPEC Section 7) */}
                       {(isAssigned || isInProgress) && (
@@ -419,7 +410,7 @@ export function MyErrandsScreen({ navigation }: any) {
                             Proof Submitted
                           </Text>
                           <Text style={{ fontWeight: '700', fontSize: 12, color: '#4B5563', textAlign: 'center' }}>
-                            Customer is reviewing delivery proof photos and store bills.
+                            Customer is reviewing delivery proof photos and additional costs.
                           </Text>
                         </View>
                       )}
@@ -432,8 +423,7 @@ export function MyErrandsScreen({ navigation }: any) {
         )}
 
         {/* ── Done (SPEC Section 9.3 Earnings Breakdown) ───────────────────────── */}
-        {showDone && (
-          <View style={{ gap: 12 }}>
+        <View style={{ gap: 12 }}>
             {/* Runner Earnings Bento Summary */}
             <View style={{ flexDirection: 'row', gap: 10 }}>
               <View style={{ flex: 1 }}>
@@ -444,7 +434,7 @@ export function MyErrandsScreen({ navigation }: any) {
                     </Text>
                     <Text style={{ fontWeight: '900', fontSize: 24 }}>
                       {formatRupees(
-                        filteredDoneList.reduce((acc, curr) => acc + (curr.agreedFee ?? 0), 0),
+                        doneList.reduce((acc, curr) => acc + (curr.agreedFee ?? 0), 0),
                       )}
                     </Text>
                   </View>
@@ -455,11 +445,11 @@ export function MyErrandsScreen({ navigation }: any) {
                 <BrutalCard backgroundColor={Card.lavender}>
                   <View style={{ padding: 14, gap: 4 }}>
                     <Text style={{ fontWeight: '900', fontSize: 11, textTransform: 'uppercase' }}>
-                      Reimbursed Bills
+                      Additional Costs
                     </Text>
                     <Text style={{ fontWeight: '900', fontSize: 24 }}>
                       {formatRupees(
-                        filteredDoneList.reduce((acc, curr) => acc + (curr.storeBillAmount ?? 0), 0),
+                        doneList.reduce((acc, curr) => acc + (curr.additionalCosts ?? 0), 0),
                       )}
                     </Text>
                   </View>
@@ -467,14 +457,14 @@ export function MyErrandsScreen({ navigation }: any) {
               </View>
             </View>
 
-            {filteredDoneList.length === 0 ? (
+            {showDoneOrders && (filteredDoneList.length === 0 ? (
               <BrutalCard backgroundColor={Card.cream}>
                 <View style={{ padding: 24, alignItems: 'center', gap: 6 }}>
                   <Text style={{ fontWeight: '900', fontSize: 16, textTransform: 'uppercase' }}>
                     No Completed Tasks Yet
                   </Text>
                   <Text style={{ fontWeight: '700', fontSize: 13, color: '#6B7280' }}>
-                    Completed tasks will show with separated fees and bill reimbursements.
+                    Completed tasks will show with separated fees and additional costs.
                   </Text>
                 </View>
               </BrutalCard>
@@ -511,11 +501,11 @@ export function MyErrandsScreen({ navigation }: any) {
                         </Text>
                       </View>
 
-                      {order.storeBillAmount ? (
+                      {order.additionalCosts ? (
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                          <Text style={{ fontWeight: '700', fontSize: 13 }}>Reimbursed Shop Bill:</Text>
+                          <Text style={{ fontWeight: '700', fontSize: 13 }}>Additional Costs:</Text>
                           <Text style={{ fontWeight: '900', fontSize: 14, color: '#D97706' }}>
-                            +{formatRupees(order.storeBillAmount)}
+                            +{formatRupees(order.additionalCosts)}
                           </Text>
                         </View>
                       ) : null}
@@ -530,10 +520,10 @@ export function MyErrandsScreen({ navigation }: any) {
                         }}
                       >
                         <Text style={{ fontWeight: '900', fontSize: 14, textTransform: 'uppercase' }}>
-                          Total Cash Inflow:
+                          Total Payout:
                         </Text>
                         <Text style={{ fontWeight: '900', fontSize: 16 }}>
-                          {formatRupees((order.agreedFee ?? 0) + (order.storeBillAmount ?? 0))}
+                          {formatRupees((order.agreedFee ?? 0) + (order.additionalCosts ?? 0))}
                         </Text>
                       </View>
                     </View>
@@ -566,9 +556,8 @@ export function MyErrandsScreen({ navigation }: any) {
                   </View>
                 </BrutalCard>
               ))
-            )}
-          </View>
-        )}
+            ))}
+        </View>
         {showOther && (
           <View style={{ gap: 12 }}>
             {otherList.length === 0 ? (
@@ -585,7 +574,7 @@ export function MyErrandsScreen({ navigation }: any) {
                   <View style={{ padding: 16, gap: 10 }}>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                       <BrutalBadge
-                        label={order.status}
+                        label={humanizeStatus(order.status)}
                         color={STATUS_BADGE_COLORS[order.status] ?? Neutral.black}
                       />
                       <Text style={{ fontWeight: '900', fontSize: 12, color: '#6B7280' }}>

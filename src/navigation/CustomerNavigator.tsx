@@ -6,9 +6,9 @@ import { CreateOrderScreen } from '../screens/customer/CreateOrderScreen';
 import { CustomerProfileScreen } from '../screens/customer/CustomerProfileScreen';
 import { OrderDetailScreen } from '../screens/customer/OrderDetailScreen';
 import { NegotiationThreadScreen } from '../screens/customer/NegotiationThreadScreen';
-import { AdvancePaymentScreen } from '../screens/customer/AdvancePaymentScreen';
+import { TaskPaymentScreen } from '../screens/customer/TaskPaymentScreen';
 import { ProofReviewScreen } from '../screens/customer/ProofReviewScreen';
-import { FinalPaymentScreen } from '../screens/customer/FinalPaymentScreen';
+import { AdditionalPaymentScreen } from '../screens/customer/AdditionalPaymentScreen';
 import { ReceiptScreen } from '../screens/customer/ReceiptScreen';
 import { CustomerStackParamList, CustomerTabParamList } from './types';
 import { LayoutDashboard, PlusCircle, User } from 'lucide-react-native';
@@ -80,9 +80,9 @@ export function CustomerNavigator() {
       <Stack.Screen name="CustomerTabs" component={CustomerTabs} />
       <Stack.Screen name="OrderDetail" component={OrderDetailScreen} />
       <Stack.Screen name="NegotiationThread" component={NegotiationThreadScreen} />
-      <Stack.Screen name="AdvancePayment" component={AdvancePaymentScreen} />
+      <Stack.Screen name="TaskPayment" component={TaskPaymentScreen} />
       <Stack.Screen name="ProofReview" component={ProofReviewScreen} />
-      <Stack.Screen name="FinalPayment" component={FinalPaymentScreen} />
+      <Stack.Screen name="AdditionalPayment" component={AdditionalPaymentScreen} />
       <Stack.Screen name="Receipt" component={ReceiptScreen} />
     </Stack.Navigator>
   );

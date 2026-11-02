@@ -20,8 +20,8 @@ interface ProofUploadSheetProps {
   onClose: () => void;
   onSubmit: (data: {
     completionPhotoUri: string;
-    billPhotoUri?: string;
-    storeBillAmount?: number;
+    additionalCostPhotoUri?: string;
+    additionalCosts?: number;
   }) => void;
 }
 
@@ -32,14 +32,14 @@ export function ProofUploadSheet({
   onSubmit,
 }: ProofUploadSheetProps) {
   const [completionUri, setCompletionUri] = useState<string | null>(null);
-  const [purchaseMade, setPurchaseMade] = useState(false);
-  const [billUri, setBillUri] = useState<string | null>(null);
-  const [billAmount, setBillAmount] = useState('');
-  const [billAmountModalVisible, setBillAmountModalVisible] = useState(false);
+  const [hasAdditionalCosts, setHasAdditionalCosts] = useState(false);
+  const [costPhotoUri, setCostPhotoUri] = useState<string | null>(null);
+  const [costAmount, setCostAmount] = useState('');
+  const [costAmountModalVisible, setCostAmountModalVisible] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const pickImage = async (
-    target: 'completion' | 'bill',
+    target: 'completion' | 'cost',
     source: 'camera' | 'gallery',
   ) => {
     setError(null);
@@ -81,7 +81,7 @@ export function ProofUploadSheet({
       if (target === 'completion') {
         setCompletionUri(uri);
       } else {
-        setBillUri(uri);
+        setCostPhotoUri(uri);
       }
     }
   };
@@ -95,38 +95,38 @@ export function ProofUploadSheet({
       return;
     }
 
-    // Rule 2: If purchase made, photo of bill and exact bill amount (> 0) required
-    let parsedBill = 0;
-    if (purchaseMade) {
-      if (!billUri) {
-        setError('Store bill photo is required when local purchase was made.');
+    // Rule 2: If additional costs were incurred, proof photo and exact amount (> 0) required
+    let parsedCosts = 0;
+    if (hasAdditionalCosts) {
+      if (!costPhotoUri) {
+        setError('Proof photo is required for additional costs.');
         return;
       }
-      parsedBill = parseInt(billAmount, 10);
-      if (isNaN(parsedBill) || parsedBill <= 0) {
-        setError('Please enter a valid bill amount greater than ₹0.');
+      parsedCosts = parseInt(costAmount, 10);
+      if (isNaN(parsedCosts) || parsedCosts <= 0) {
+        setError('Please enter a valid additional cost amount greater than ₹0.');
         return;
       }
     }
 
     onSubmit({
       completionPhotoUri: completionUri,
-      billPhotoUri: purchaseMade ? (billUri ?? undefined) : undefined,
-      storeBillAmount: purchaseMade ? parsedBill : undefined,
+      additionalCostPhotoUri: hasAdditionalCosts ? (costPhotoUri ?? undefined) : undefined,
+      additionalCosts: hasAdditionalCosts ? parsedCosts : undefined,
     });
 
     // Reset state
     setCompletionUri(null);
-    setPurchaseMade(false);
-    setBillUri(null);
-    setBillAmount('');
+    setHasAdditionalCosts(false);
+    setCostPhotoUri(null);
+    setCostAmount('');
     onClose();
   };
 
   return (
     <>
     <BottomSheet
-      visible={visible && !billAmountModalVisible}
+      visible={visible && !costAmountModalVisible}
       onClose={onClose}
       title="SUBMIT PROOF OF COMPLETION"
       snapHeight={580}
@@ -243,7 +243,7 @@ export function ProofUploadSheet({
           )}
         </View>
 
-        {/* 2. Purchase Made Toggle */}
+        {/* 2. Additional Costs Toggle */}
         <View
           style={{
             backgroundColor: '#FFFFFF',
@@ -257,46 +257,46 @@ export function ProofUploadSheet({
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
             <View style={{ flex: 1 }}>
               <Text style={{ fontWeight: '900', fontSize: 13, textTransform: 'uppercase' }}>
-                2. Local Purchase Made?
+                2. Additional Costs Incurred?
               </Text>
               <Text style={{ fontWeight: '700', fontSize: 11, color: '#4B5563' }}>
-                Toggle on if you bought items and need bill reimbursement.
+                Toggle on if you paid for items, parking, fees, or anything else.
               </Text>
             </View>
             <Switch
-              value={purchaseMade}
-              onValueChange={setPurchaseMade}
+              value={hasAdditionalCosts}
+              onValueChange={setHasAdditionalCosts}
               trackColor={{ false: '#9CA3AF', true: Neutral.black }}
-              thumbColor={purchaseMade ? CTA.lime : '#F3F4F6'}
+              thumbColor={hasAdditionalCosts ? CTA.lime : '#F3F4F6'}
             />
           </View>
 
-          {/* Conditional store bill inputs */}
-          {purchaseMade && (
+          {/* Conditional additional cost inputs */}
+          {hasAdditionalCosts && (
             <View style={{ gap: 10, borderTopWidth: 2, borderColor: '#E5E7EB', paddingTop: 10 }}>
               <View style={{ gap: 4 }}>
                 <Text style={{ fontWeight: '700', fontSize: 13, textTransform: 'uppercase' }}>
-                  Exact Bill Amount (₹) *
+                  Exact Additional Cost (₹) *
                 </Text>
                 <TouchableOpacity
                   accessibilityRole="button"
-                  onPress={() => setBillAmountModalVisible(true)}
+                  onPress={() => setCostAmountModalVisible(true)}
                   style={{ backgroundColor: '#FFFFFF', borderWidth: 3, borderColor: Neutral.black, borderRadius: 999, padding: 14 }}
                 >
-                  <Text style={{ fontWeight: '700', fontSize: 15, color: billAmount ? Neutral.black : '#9CA3AF' }}>
-                    {billAmount ? `₹${billAmount}` : 'Tap to enter bill amount'}
+                  <Text style={{ fontWeight: '700', fontSize: 15, color: costAmount ? Neutral.black : '#9CA3AF' }}>
+                    {costAmount ? `₹${costAmount}` : 'Tap to enter additional cost'}
                   </Text>
                 </TouchableOpacity>
               </View>
 
               <Text style={{ fontWeight: '900', fontSize: 11, textTransform: 'uppercase', color: Neutral.black }}>
-                Store Receipt Photo *
+                Proof Photo *
               </Text>
 
-              {billUri ? (
+              {costPhotoUri ? (
                 <View style={{ alignItems: 'center', gap: 6 }}>
                   <Image
-                    source={{ uri: billUri }}
+                    source={{ uri: costPhotoUri }}
                     style={{
                       width: '100%',
                       height: 120,
@@ -307,7 +307,7 @@ export function ProofUploadSheet({
                     resizeMode="cover"
                   />
                   <TouchableOpacity
-                    onPress={() => setBillUri(null)}
+                    onPress={() => setCostPhotoUri(null)}
                     style={{ alignSelf: 'flex-end' }}
                   >
                     <Text style={{ fontWeight: '900', fontSize: 11, color: '#DC2626' }}>
@@ -318,7 +318,7 @@ export function ProofUploadSheet({
               ) : (
                 <View style={{ flexDirection: 'row', gap: 10 }}>
                   <TouchableOpacity
-                    onPress={() => pickImage('bill', 'camera')}
+                    onPress={() => pickImage('cost', 'camera')}
                     style={{
                       flex: 1,
                       backgroundColor: '#EDE9FE',
@@ -332,12 +332,12 @@ export function ProofUploadSheet({
                   >
                     <Camera size={18} color={Neutral.black} />
                     <Text style={{ fontWeight: '900', fontSize: 11, textTransform: 'uppercase' }}>
-                      Camera Bill
+                      Camera Photo
                     </Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
-                    onPress={() => pickImage('bill', 'gallery')}
+                    onPress={() => pickImage('cost', 'gallery')}
                     style={{
                       flex: 1,
                       backgroundColor: '#F3F4F6',
@@ -351,7 +351,7 @@ export function ProofUploadSheet({
                   >
                     <Receipt size={18} color={Neutral.black} />
                     <Text style={{ fontWeight: '900', fontSize: 11, textTransform: 'uppercase' }}>
-                      Gallery Bill
+                      Gallery Photo
                     </Text>
                   </TouchableOpacity>
                 </View>
@@ -372,17 +372,17 @@ export function ProofUploadSheet({
       </View>
     </BottomSheet>
     <BidDetailsModal
-      key={billAmountModalVisible ? 'bill-open' : 'bill-closed'}
-      visible={billAmountModalVisible}
-      amount={billAmount}
+      key={costAmountModalVisible ? 'cost-open' : 'cost-closed'}
+      visible={costAmountModalVisible}
+      amount={costAmount}
       note=""
       showNote={false}
-      title="Enter Local Purchase Bill Amount"
+      title="Enter Additional Costs Amount"
       submitLabel="Use Amount"
-      onCancel={() => setBillAmountModalVisible(false)}
+      onCancel={() => setCostAmountModalVisible(false)}
       onSubmit={(amount) => {
-        setBillAmount(amount);
-        setBillAmountModalVisible(false);
+        setCostAmount(amount);
+        setCostAmountModalVisible(false);
       }}
     />
     </>

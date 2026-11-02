@@ -345,11 +345,10 @@ const thread_ps: BidThread = {
   status: 'AGREED',
 };
 
-const payment_ps_adv: Payment = {
+const payment_ps_fee: Payment = {
   id: pid(),
-  kind: 'ADVANCE',
-  amount: 40,
-  method: 'UPI',
+  kind: 'TASK_FEE',
+  amount: 80,
   paidAt: ago(100),
   upiRef: 'UPI202610DEMO01',
 };
@@ -383,14 +382,10 @@ const order7: ErrandOrder = {
   assignedRunnerId: 'u_run_1',
   assignedRunnerName: 'Rahul Das',
   agreedFee: 80,
-  advanceAmount: 40,
-  balanceFee: 40,
-  storeBillAmount: 450,
+  additionalCosts: 450,
   completionPhotoUri: 'https://picsum.photos/seed/proof007/400/300',
-  billPhotoUri: 'https://picsum.photos/seed/bill007/400/300',
-  payments: [payment_ps_adv],
-  finalBalance: 490,   // 40 balance + 450 store bill
-  totalPayable: 530,   // 80 fee + 450 store bill
+  additionalCostPhotoUri: 'https://picsum.photos/seed/bill007/400/300',
+  payments: [payment_ps_fee],
 };
 
 // ── 8. COMPLETED ──────────────────────────────────────────────────────────────
@@ -414,21 +409,20 @@ const thread_done: BidThread = {
   status: 'AGREED',
 };
 
-const payment_done_adv: Payment = {
+const payment_done_fee: Payment = {
   id: pid(),
-  kind: 'ADVANCE',
-  amount: 75,
-  method: 'UPI',
+  kind: 'TASK_FEE',
+  amount: 150,
   paidAt: ago(280),
   upiRef: 'UPI202610DEMO02',
 };
 
-const payment_done_final: Payment = {
+const payment_done_additional: Payment = {
   id: pid(),
-  kind: 'FINAL',
-  amount: 275,  // 75 balance + 200 store bill
-  method: 'CASH',
+  kind: 'ADDITIONAL_COST',
+  amount: 200,
   paidAt: ago(220),
+  upiRef: 'UPI202610DEMO03',
 };
 
 const thread_done_ps: BidThread = {
@@ -465,14 +459,10 @@ const order8: ErrandOrder = {
   assignedRunnerId: 'u_run_2',
   assignedRunnerName: 'Vishnu Krishnan',
   agreedFee: 150,
-  advanceAmount: 75,
-  balanceFee: 75,
-  storeBillAmount: 200,
+  additionalCosts: 200,
   completionPhotoUri: 'https://picsum.photos/seed/proof008/400/300',
-  billPhotoUri: 'https://picsum.photos/seed/bill008/400/300',
-  payments: [payment_done_adv, payment_done_final],
-  finalBalance: 275,
-  totalPayable: 350,
+  additionalCostPhotoUri: 'https://picsum.photos/seed/bill008/400/300',
+  payments: [payment_done_fee, payment_done_additional],
   rating: 4,
   review: 'Fast delivery, very professional. Will use again!',
 };

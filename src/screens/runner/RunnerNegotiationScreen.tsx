@@ -16,7 +16,7 @@ import {
 } from '../../components';
 import { Canvas, Card, CTA, Neutral } from '../../theme';
 import { counterCount, useStore } from '../../store';
-import { formatDateTime, formatRupees } from '../../utils/format';
+import { formatDateTime, formatRupees, humanizeStatus } from '../../utils/format';
 import { ArrowLeft, Clock, AlertCircle } from 'lucide-react-native';
 
 export function RunnerNegotiationScreen({ route, navigation }: any) {
@@ -92,7 +92,7 @@ export function RunnerNegotiationScreen({ route, navigation }: any) {
           </Text>
         </TouchableOpacity>
 
-        <BrutalBadge label={`Thread: ${thread.status}`} color={CTA.lime} />
+        <BrutalBadge label={`Thread: ${humanizeStatus(thread.status)}`} color={CTA.lime} />
       </View>
 
       <KeyboardAwareScrollView contentContainerStyle={{ padding: 16, gap: 16 }} keyboardShouldPersistTaps="handled">
@@ -151,7 +151,7 @@ export function RunnerNegotiationScreen({ route, navigation }: any) {
                         {isRunner ? 'Your Offer' : 'Customer Counter'}
                       </Text>
                       <BrutalBadge
-                        label={offer.status}
+                        label={humanizeStatus(offer.status)}
                         color={
                           offer.status === 'ACCEPTED'
                             ? '#10B981'
@@ -262,7 +262,7 @@ export function RunnerNegotiationScreen({ route, navigation }: any) {
                 Deal agreed on {formatRupees(order.agreedFee ?? latestOffer.price)}!
               </Text>
               <Text style={{ fontWeight: '700', fontSize: 12, color: '#065F46' }}>
-                Status: {order.status}. Awaiting customer's advance deposit to dispatch you.
+                Status: {humanizeStatus(order.status)}. Awaiting customer's payment to dispatch you.
               </Text>
             </View>
           </BrutalCard>

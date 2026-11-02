@@ -164,14 +164,14 @@ export function useSimulator() {
                 advanceProgress(currentOrder.id, 'ON_THE_WAY');
               } else if (currentOrder.progressStep === 'ON_THE_WAY') {
                 // Submit completion proof
-                const hasStoreBill = currentOrder.category === 'Store Purchases';
+                const hasAdditionalCosts = currentOrder.category === 'Store Purchases';
                 submitProof({
                   orderId: currentOrder.id,
                   completionPhotoUri: 'https://picsum.photos/seed/proof_sim/400/300',
-                  billPhotoUri: hasStoreBill
+                  additionalCostPhotoUri: hasAdditionalCosts
                     ? 'https://picsum.photos/seed/bill_sim/400/300'
                     : undefined,
-                  storeBillAmount: hasStoreBill ? 220 : undefined,
+                  additionalCosts: hasAdditionalCosts ? 220 : undefined,
                 });
               }
             }
@@ -198,14 +198,14 @@ export function skipSimulationAhead(orderId: string) {
     } else if (order.progressStep === 'ITEMS_PURCHASED_OR_COLLECTED') {
       state.advanceProgress(orderId, 'ON_THE_WAY');
     } else if (order.progressStep === 'ON_THE_WAY') {
-      const hasStoreBill = order.category === 'Store Purchases';
+      const hasAdditionalCosts = order.category === 'Store Purchases';
       state.submitProof({
         orderId,
         completionPhotoUri: 'https://picsum.photos/seed/proof_skip/400/300',
-        billPhotoUri: hasStoreBill
+        additionalCostPhotoUri: hasAdditionalCosts
           ? 'https://picsum.photos/seed/bill_skip/400/300'
           : undefined,
-        storeBillAmount: hasStoreBill ? 250 : undefined,
+        additionalCosts: hasAdditionalCosts ? 250 : undefined,
       });
     }
   }

@@ -30,11 +30,17 @@ export function RunnerFeedScreen({ navigation }: any) {
   const placeBid = useStore((s) => s.placeBid);
   const editBid = useStore((s) => s.editBid);
   const withdrawBid = useStore((s) => s.withdrawBid);
+  const dismissRejectedBid = useStore((s) => s.dismissRejectedBid);
 
   const runnerId = effectiveRunnerId(currentUser, adminMode) || 'u_run_1';
   const runnerName = currentUser?.role === 'TASKBOY' ? currentUser.name : 'Rahul Das';
 
-  const feedOrders = selectRunnerFeed(orders);
+  const feedOrders = selectRunnerFeed(orders).filter(
+    (order) =>
+      !order.threads.some(
+        (thread) => thread.runnerId === runnerId && thread.status === 'REJECTED',
+      ),
+  );
 
   const handleOpenBid = (order: ErrandOrder) => {
     setSelectedOrder(order);
@@ -252,6 +258,7 @@ export function RunnerFeedScreen({ navigation }: any) {
         onSubmitBid={handleSubmitBid}
         onEditBid={(orderId, threadId, price, note) => editBid(orderId, threadId, price, note)}
         onWithdrawBid={handleWithdrawBid}
+        onDismissRejectedBid={dismissRejectedBid}
         onOpenNegotiation={handleOpenNegotiation}
       />
     </View>

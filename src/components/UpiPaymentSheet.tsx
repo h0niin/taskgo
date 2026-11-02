@@ -2,8 +2,6 @@ import React, { useState } from 'react';
 import { ActivityIndicator, Text, View } from 'react-native';
 import { BottomSheet } from './BottomSheet';
 import { BrutalButton } from './BrutalButton';
-import { BrutalInput } from './BrutalInput';
-import { BrutalBadge } from './BrutalBadge';
 import { CTA, Neutral } from '../theme';
 import { formatRupees } from '../utils/format';
 import { CheckCircle2, ShieldCheck } from 'lucide-react-native';
@@ -19,16 +17,14 @@ interface UpiPaymentSheetProps {
 export function UpiPaymentSheet({
   visible,
   amount,
-  paymentTitle = 'Advance Deposit',
+  paymentTitle = 'Task Payment',
   onClose,
   onSuccess,
 }: UpiPaymentSheetProps) {
-  const [upiId, setUpiId] = useState('customer@okaxis');
   const [processing, setProcessing] = useState(false);
   const [success, setSuccess] = useState(false);
 
   const handlePay = () => {
-    if (!upiId) return;
     setProcessing(true);
 
     // Fake ~2s processing per SPEC Section 6
@@ -105,7 +101,7 @@ export function UpiPaymentSheet({
               Payment Successful!
             </Text>
             <Text style={{ fontWeight: '700', fontSize: 13, color: '#374151' }}>
-              Amount paid: {formatRupees(amount)} · Dispatched!
+              Amount paid: {formatRupees(amount)} · Payment complete!
             </Text>
           </View>
         ) : processing ? (
@@ -139,14 +135,6 @@ export function UpiPaymentSheet({
           </View>
         ) : (
           <View style={{ gap: 14 }}>
-            <BrutalInput
-              label="Virtual Payment Address (VPA / UPI ID)"
-              placeholder="e.g. yourname@oksbi"
-              value={upiId}
-              onChangeText={setUpiId}
-              autoCapitalize="none"
-            />
-
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
               <ShieldCheck size={16} color="#10B981" />
               <Text style={{ fontWeight: '700', fontSize: 12, color: '#374151' }}>
@@ -155,11 +143,10 @@ export function UpiPaymentSheet({
             </View>
 
             <BrutalButton
-              label={`Pay ${formatRupees(amount)} with UPI`}
+              label={`PAY ${formatRupees(amount)} WITH UPI`}
               color={CTA.lime}
               fullWidth
               size="lg"
-              disabled={!upiId.trim()}
               onPress={handlePay}
             />
           </View>

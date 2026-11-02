@@ -17,12 +17,11 @@ export interface User {
 export type OrderStatus =
   | 'PLACED'
   | 'BIDDING'
-  | 'AGREED'
-  | 'AWAITING_DEPOSIT'
+  | 'AWAITING_PAYMENT'
   | 'ASSIGNED'
   | 'IN_PROGRESS'
   | 'PROOF_SUBMITTED'
-  | 'AWAITING_FINAL_PAYMENT'
+  | 'AWAITING_ADDITIONAL_PAYMENT'
   | 'COMPLETED'
   | 'CANCELLED';
 
@@ -55,6 +54,7 @@ export interface Offer {
   note: string;
   createdAt: string; // ISO 8601
   status: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'COUNTERED' | 'EXPIRED';
+  // EXPIRED is unused: offer expiry is not implemented yet, so nothing produces it.
 }
 
 export interface BidThread {
@@ -64,15 +64,15 @@ export interface BidThread {
   runnerName: string;
   offers: Offer[];
   status: 'OPEN' | 'AGREED' | 'LOST' | 'REJECTED' | 'WITHDRAWN';
+  dismissedByRunner?: boolean;
 }
 
 // ─── Payments ─────────────────────────────────────────────────────────────────
 
 export interface Payment {
   id: string;
-  kind: 'ADVANCE' | 'FINAL';
+  kind: 'TASK_FEE' | 'ADDITIONAL_COST';
   amount: number;
-  method: 'UPI' | 'CASH';
   paidAt: string; // ISO 8601
   upiRef?: string;
 }
@@ -97,18 +97,14 @@ export interface ErrandOrder {
   assignedRunnerId?: string;
   assignedRunnerName?: string;
   agreedFee?: number;
-  advanceAmount?: number;
-  balanceFee?: number;
 
   // Proof
   completionPhotoUri?: string;
-  billPhotoUri?: string;
-  storeBillAmount?: number;
+  additionalCostPhotoUri?: string;
+  additionalCosts?: number;
 
   // Payments
   payments: Payment[];
-  finalBalance?: number;
-  totalPayable?: number;
 
   // Resolution
   issueFlagged?: boolean;
@@ -120,4 +116,3 @@ export interface ErrandOrder {
 
 /** Which UI side the admin is currently acting as */
 export type AdminMode = 'CUSTOMER' | 'TASKBOY';
-

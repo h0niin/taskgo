@@ -12,7 +12,6 @@ interface StaticMapCardProps {
   pickupLng?: number;
   dropoffLat?: number;
   dropoffLng?: number;
-  currentStep?: string;
   etaText?: string;
   style?: ViewStyle;
 }
@@ -24,8 +23,7 @@ export function StaticMapCard({
   pickupLng,
   dropoffLat,
   dropoffLng,
-  currentStep,
-  etaText = '12-15 mins',
+  etaText,
   style,
 }: StaticMapCardProps) {
   return (
@@ -39,7 +37,7 @@ export function StaticMapCard({
               Live Kozhikode Route
             </Text>
           </View>
-          <BrutalBadge label={`ETA: ${etaText}`} color="#10B981" />
+          {etaText ? <BrutalBadge label={`ETA: ${etaText}`} color="#10B981" /> : null}
         </View>
 
         {/* Real OSM Map */}

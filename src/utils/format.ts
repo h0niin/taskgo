@@ -2,6 +2,56 @@
 // Section 0 of SPEC.md: ₹ everywhere, Indian number formatting,
 // phones as +91 XXXXX XXXXX.
 
+import type { ErrandOrder, ProgressStep } from '../types/models';
+
+/** Turn an enum value into display text: AWAITING_PAYMENT → "Awaiting Payment". */
+export function humanizeStatus(value: string): string {
+  return value
+    .replace(/_/g, ' ')
+    .toLowerCase()
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+const PROGRESS_LABELS: Record<ProgressStep, string> = {
+  ARRIVED: 'Arrived at Location',
+  ITEMS_PURCHASED_OR_COLLECTED: 'Items Purchased / Collected',
+  ON_THE_WAY: 'On the Way',
+};
+
+/** Human-readable runner progress step. */
+export function formatProgressStep(step?: ProgressStep): string {
+  return step ? PROGRESS_LABELS[step] : 'En Route';
+}
+
+/**
+ * Current user-facing stage of an order. Order status wins over progressStep so
+ * a submitted proof never keeps showing the last travel step.
+ */
+export function formatOrderStage(
+  order: Pick<ErrandOrder, 'status' | 'progressStep'>,
+): string {
+  switch (order.status) {
+    case 'PLACED':
+      return 'Awaiting Bids';
+    case 'BIDDING':
+      return 'Receiving Bids';
+    case 'AWAITING_PAYMENT':
+      return 'Awaiting Payment';
+    case 'ASSIGNED':
+      return 'Runner Assigned';
+    case 'IN_PROGRESS':
+      return formatProgressStep(order.progressStep);
+    case 'PROOF_SUBMITTED':
+      return 'Proof Submitted';
+    case 'AWAITING_ADDITIONAL_PAYMENT':
+      return 'Awaiting Additional Payment';
+    case 'COMPLETED':
+      return 'Completed';
+    case 'CANCELLED':
+      return 'Cancelled';
+  }
+}
+
 /**
  * Format a whole-rupee amount with the ₹ symbol and Indian grouping.
  * e.g. 150000 → "₹1,50,000"

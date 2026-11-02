@@ -25,9 +25,9 @@ export type CustomerStackParamList = {
   CustomerTabs: undefined;
   OrderDetail: { orderId: string };
   NegotiationThread: { orderId: string; threadId: string };
-  AdvancePayment: { orderId: string };
+  TaskPayment: { orderId: string };
   ProofReview: { orderId: string };
-  FinalPayment: { orderId: string };
+  AdditionalPayment: { orderId: string };
   Receipt: { orderId: string };
 };
 

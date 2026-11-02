@@ -47,12 +47,13 @@ export function ReceiptScreen({ route, navigation }: any) {
     );
   }
 
-  const advancePayment = order.payments.find((p) => p.kind === 'ADVANCE');
-  const finalPayment = order.payments.find((p) => p.kind === 'FINAL');
+  const feePayment = order.payments.find((p) => p.kind === 'TASK_FEE');
+  const additionalPayment = order.payments.find((p) => p.kind === 'ADDITIONAL_COST');
 
-  const agreedFee = order.agreedFee ?? 100;
-  const storeBill = order.storeBillAmount ?? 0;
-  const totalPaid = order.totalPayable ?? agreedFee + storeBill;
+  const agreedFee = order.agreedFee ?? 0;
+  const additionalCosts = order.additionalCosts ?? 0;
+  const totalPaid =
+    order.payments.reduce((sum, p) => sum + p.amount, 0) || agreedFee + additionalCosts;
 
   const handleSaveRating = () => {
     rateOrder(orderId, rating, review.trim());
@@ -211,51 +212,39 @@ export function ReceiptScreen({ route, navigation }: any) {
 
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                 <View>
-                  <Text style={{ fontWeight: '700', fontSize: 13 }}>Advance Paid:</Text>
-                  {advancePayment?.paidAt && (
+                  <Text style={{ fontWeight: '700', fontSize: 13 }}>Task Fee Paid:</Text>
+                  {feePayment?.paidAt && (
                     <Text style={{ fontWeight: '700', fontSize: 10, color: '#6B7280' }}>
-                      {formatDateTime(advancePayment.paidAt)}
+                      {formatDateTime(feePayment.paidAt)}
                     </Text>
                   )}
                 </View>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                  <BrutalBadge label={advancePayment?.method ?? 'UPI'} color="#8B5CF6" />
+                  <BrutalBadge label="UPI" color="#8B5CF6" />
                   <Text style={{ fontWeight: '900', fontSize: 13 }}>
-                    {formatRupees(order.advanceAmount ?? advancePayment?.amount ?? 0)}
+                    {formatRupees(feePayment?.amount ?? agreedFee)}
                   </Text>
                 </View>
               </View>
 
-              {storeBill > 0 && (
+              {additionalCosts > 0 && (
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                   <View>
-                    <Text style={{ fontWeight: '700', fontSize: 13 }}>Store Bill Reimbursed:</Text>
-                    <Text style={{ fontWeight: '700', fontSize: 10, color: '#D97706' }}>
-                      Tap thumbnail to inspect
+                    <Text style={{ fontWeight: '700', fontSize: 13 }}>Additional Costs Paid:</Text>
+                    {additionalPayment?.paidAt && (
+                      <Text style={{ fontWeight: '700', fontSize: 10, color: '#D97706' }}>
+                        {formatDateTime(additionalPayment.paidAt)}
+                      </Text>
+                    )}
+                  </View>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <BrutalBadge label="UPI" color="#F97316" />
+                    <Text style={{ fontWeight: '900', fontSize: 13, color: '#D97706' }}>
+                      +{formatRupees(additionalPayment?.amount ?? additionalCosts)}
                     </Text>
                   </View>
-                  <Text style={{ fontWeight: '900', fontSize: 13, color: '#D97706' }}>
-                    +{formatRupees(storeBill)}
-                  </Text>
                 </View>
               )}
-
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                <View>
-                  <Text style={{ fontWeight: '700', fontSize: 13 }}>Final Balance Paid:</Text>
-                  {finalPayment?.paidAt && (
-                    <Text style={{ fontWeight: '700', fontSize: 10, color: '#6B7280' }}>
-                      {formatDateTime(finalPayment.paidAt)}
-                    </Text>
-                  )}
-                </View>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                  <BrutalBadge label={finalPayment?.method ?? 'CASH'} color="#10B981" />
-                  <Text style={{ fontWeight: '900', fontSize: 13 }}>
-                    {formatRupees(order.finalBalance ?? finalPayment?.amount ?? 0)}
-                  </Text>
-                </View>
-              </View>
             </View>
 
             {/* Double Solid Line for Total */}
@@ -270,11 +259,11 @@ export function ReceiptScreen({ route, navigation }: any) {
               </View>
             </View>
 
-            {/* Store Bill Thumbnail with modal trigger (SPEC Section 8.5) */}
-            {order.billPhotoUri ? (
+            {/* Additional Costs Photo with modal trigger (SPEC Section 8.5) */}
+            {order.additionalCostPhotoUri ? (
               <View style={{ marginTop: 4, gap: 6 }}>
                 <Text style={{ fontWeight: '800', fontSize: 11, textTransform: 'uppercase' }}>
-                  Attached Store Bill Receipt (Tap to Zoom):
+                  Attached Additional Costs Receipt (Tap to Zoom):
                 </Text>
                 <TouchableOpacity
                   onPress={() => setBillModalVisible(true)}
@@ -282,7 +271,7 @@ export function ReceiptScreen({ route, navigation }: any) {
                 >
                   <View style={{ position: 'relative' }}>
                     <Image
-                      source={{ uri: order.billPhotoUri }}
+                      source={{ uri: order.additionalCostPhotoUri }}
                       style={{
                         width: 90,
                         height: 90,
@@ -407,8 +396,8 @@ export function ReceiptScreen({ route, navigation }: any) {
         />
       </KeyboardAwareScrollView>
 
-      {/* Bill Photo Full-Screen Modal */}
-      {order.billPhotoUri ? (
+      {/* Additional Costs Photo Full-Screen Modal */}
+      {order.additionalCostPhotoUri ? (
         <Modal
           visible={billModalVisible}
           transparent
@@ -439,7 +428,7 @@ export function ReceiptScreen({ route, navigation }: any) {
             >
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Text style={{ fontWeight: '900', fontSize: 16, textTransform: 'uppercase' }}>
-                  Original Store Receipt
+                  Original Additional Costs Receipt
                 </Text>
                 <TouchableOpacity
                   onPress={() => setBillModalVisible(false)}
@@ -454,7 +443,7 @@ export function ReceiptScreen({ route, navigation }: any) {
               </View>
 
               <Image
-                source={{ uri: order.billPhotoUri }}
+                source={{ uri: order.additionalCostPhotoUri }}
                 style={{
                   width: '100%',
                   height: 320,
@@ -466,7 +455,7 @@ export function ReceiptScreen({ route, navigation }: any) {
               />
 
               <Text style={{ fontWeight: '700', fontSize: 13, textAlign: 'center', color: '#374151' }}>
-                Reimbursed Amount: {formatRupees(order.storeBillAmount ?? 0)}
+                Additional Costs: {formatRupees(order.additionalCosts ?? 0)}
               </Text>
             </View>
           </Pressable>
