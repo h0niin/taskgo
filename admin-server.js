@@ -11,9 +11,9 @@ const BOT_BRIDGE_URL = process.env.TASKGO_BOT_BRIDGE_URL || 'http://127.0.0.1:30
 const DATA_PATH = path.join(__dirname, '.taskgo-admin-orders.json');
 const DASHBOARD_PATH = path.join(__dirname, 'admin-dashboard.html');
 const RUNNERS = [
-  { id: 'u_run_1', name: 'Rahul Das', phone: '9567891234', role: 'TASKBOY' },
-  { id: 'u_run_2', name: 'Vishnu Krishnan', phone: '9562341234', role: 'TASKBOY' },
-  { id: 'u_run_3', name: 'Sreekanth P', phone: '9544219876', role: 'TASKBOY' },
+  { id: 'u_run_1', name: 'Rahul Das', phone: '9567891234', role: 'TASKER' },
+  { id: 'u_run_2', name: 'Vishnu Krishnan', phone: '9562341234', role: 'TASKER' },
+  { id: 'u_run_3', name: 'Sreekanth P', phone: '9544219876', role: 'TASKER' },
 ];
 const onlineHeartbeats = new Map();
 const orders = new Map();
@@ -94,7 +94,7 @@ function validateNewOrder(body) {
   if (typeof body.itemsSummary !== 'string' || !body.itemsSummary.trim()) return 'Describe what needs doing';
   if (typeof body.pickup !== 'string' || !body.pickup.trim()) return 'Pickup location is required';
   if (typeof body.dropoff !== 'string' || !body.dropoff.trim()) return 'Drop-off location is required';
-  if (!RUNNERS.some(runner => runner.id === body.runnerId)) return 'Choose a valid taskboy';
+  if (!RUNNERS.some(runner => runner.id === body.runnerId)) return 'Choose a valid tasker';
   if (!Number.isFinite(body.fee) || body.fee <= 0) return 'Fixed fee must be a positive amount';
   return null;
 }
@@ -121,7 +121,7 @@ async function handle(req, res) {
   }
   if (req.method === 'POST' && url.pathname === '/api/runners/heartbeat') {
     const body = await readBody(req);
-    if (!RUNNERS.some(runner => runner.id === body.runnerId)) return json(res, 400, { error: 'Unknown taskboy' });
+    if (!RUNNERS.some(runner => runner.id === body.runnerId)) return json(res, 400, { error: 'Unknown tasker' });
     onlineHeartbeats.set(body.runnerId, { online: body.online !== false, at: Date.now() });
     return json(res, 200, { ok: true, runners: getRunnerStatus() });
   }

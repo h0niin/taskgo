@@ -30,7 +30,7 @@ export const SEED_USERS: User[] = [
     name: 'Rahul Das',
     email: 'runner@taskgo.in',
     password: 'runner123',
-    role: 'TASKBOY',
+    role: 'TASKER',
     phone: '9567891234',
   },
   {
@@ -47,7 +47,7 @@ export const SEED_USERS: User[] = [
     name: 'Vishnu Krishnan',
     email: 'vishnu@taskgo.in',
     password: 'runner123',
-    role: 'TASKBOY',
+    role: 'TASKER',
     phone: '9562341234',
   },
   {
@@ -55,7 +55,7 @@ export const SEED_USERS: User[] = [
     name: 'Sreekanth P',
     email: 'sreekanth@taskgo.in',
     password: 'runner123',
-    role: 'TASKBOY',
+    role: 'TASKER',
     phone: '9544219876',
   },
 ];

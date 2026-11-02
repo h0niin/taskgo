@@ -212,7 +212,7 @@ export function LoginScreen() {
                 </Text>
               </TouchableOpacity>
 
-              {/* Task Boy chip */}
+              {/* Tasker chip */}
               <TouchableOpacity
                 activeOpacity={0.8}
                 onPress={() => handleQuickLogin('runner@taskgo.in', 'runner123')}
@@ -229,7 +229,7 @@ export function LoginScreen() {
                 }}
               >
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                  <BrutalBadge label="Task Boy" color="#F97316" />
+                  <BrutalBadge label="Tasker" color="#F97316" />
                   <Text style={{ fontWeight: '900', fontSize: 13, color: Neutral.black }}>
                     Rahul Das
                   </Text>

@@ -100,8 +100,8 @@ export function useSimulator() {
 
     // Rule: When real runner persona is actively in use, do not simulate for it
     const isRealRunnerActive =
-      currentUser?.role === 'TASKBOY' ||
-      (currentUser?.role === 'ADMIN' && adminMode === 'TASKBOY');
+      currentUser?.role === 'TASKER' ||
+      (currentUser?.role === 'ADMIN' && adminMode === 'TASKER');
 
     orders.forEach((order) => {
       // ── 1. Auto-place bid on PLACED order after 5-8s ───────────────────────

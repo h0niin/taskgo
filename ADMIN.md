@@ -12,9 +12,9 @@ The WhatsApp bot may continue running on port 3001. The dashboard reads its `/ap
 
 ## Fixed-price direct dispatch
 
-Use **Direct dispatch** to create a task, choose a taskboy and enter the agreed fixed fee. It skips bidding and creates the task directly as `ASSIGNED`, so it appears in the selected runner's **My Errands** and can proceed through the normal progress/proof flow. This is an admin-authorized dispatch; it does not collect or record a customer payment.
+Use **Direct dispatch** to create a task, choose a tasker and enter the agreed fixed fee. It skips bidding and creates the task directly as `ASSIGNED`, so it appears in the selected runner's **My Errands** and can proceed through the normal progress/proof flow. This is an admin-authorized dispatch; it does not collect or record a customer payment.
 
-Taskboy availability is heartbeat-based. A runner appears online after opening the runner feed in Expo Go and goes offline after 60 seconds without a heartbeat. Current work is derived from assigned, non-terminal orders. Busy/offline assignment requires an explicit confirmation in the dashboard.
+Tasker availability is heartbeat-based. A runner appears online after opening the runner feed in Expo Go and goes offline after 60 seconds without a heartbeat. Current work is derived from assigned, non-terminal orders. Busy/offline assignment requires an explicit confirmation in the dashboard.
 
 ## Local-only limitations
 

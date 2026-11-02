@@ -181,7 +181,7 @@ export function ReceiptScreen({ route, navigation }: any) {
               </View>
 
               <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                <Text style={{ fontWeight: '700', fontSize: 12, color: '#6B7280' }}>Task Boy:</Text>
+                <Text style={{ fontWeight: '700', fontSize: 12, color: '#6B7280' }}>Tasker:</Text>
                 <Text style={{ fontWeight: '900', fontSize: 12, color: '#C2410C' }}>
                   {order.assignedRunnerName ?? 'Assigned Runner'}
                 </Text>
@@ -336,7 +336,7 @@ export function ReceiptScreen({ route, navigation }: any) {
         <BrutalCard backgroundColor="#FFFFFF">
           <View style={{ padding: 18, gap: 14 }}>
             <Text style={{ fontWeight: '900', fontSize: 15, textTransform: 'uppercase' }}>
-              Rate Your Task Boy
+              Rate Your Tasker
             </Text>
 
             {/* Chunky Star Buttons */}

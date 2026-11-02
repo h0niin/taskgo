@@ -79,7 +79,7 @@ export function AdditionalPaymentScreen({ route, navigation }: any) {
             Additional Costs Due
           </Text>
           <Text style={{ fontWeight: '700', fontSize: 13, color: '#374151' }}>
-            {order.assignedRunnerName ?? 'The Task Boy'} incurred these costs during your errand.
+            {order.assignedRunnerName ?? 'The Tasker'} incurred these costs during your errand.
           </Text>
         </View>
 

@@ -1,7 +1,7 @@
 // ─── Data Models ─────────────────────────────────────────────────────────────
 // Mirrors Section 10 of SPEC.md exactly.
 
-export type UserRole = 'CUSTOMER' | 'TASKBOY' | 'ADMIN';
+export type UserRole = 'CUSTOMER' | 'TASKER' | 'ADMIN';
 
 export interface User {
   id: string;
@@ -115,4 +115,4 @@ export interface ErrandOrder {
 // ─── App-level UI state ───────────────────────────────────────────────────────
 
 /** Which UI side the admin is currently acting as */
-export type AdminMode = 'CUSTOMER' | 'TASKBOY';
+export type AdminMode = 'CUSTOMER' | 'TASKER';

@@ -33,7 +33,7 @@ export function RunnerFeedScreen({ navigation }: any) {
   const dismissBid = useStore((s) => s.dismissBid);
 
   const runnerId = effectiveRunnerId(currentUser, adminMode) || 'u_run_1';
-  const runnerName = currentUser?.role === 'TASKBOY' ? currentUser.name : 'Rahul Das';
+  const runnerName = currentUser?.role === 'TASKER' ? currentUser.name : 'Rahul Das';
   const onlineRef = useRef(online);
 
   useEffect(() => {
@@ -128,7 +128,7 @@ export function RunnerFeedScreen({ navigation }: any) {
               </Text>
             </View>
             <Text style={{ fontWeight: '700', fontSize: 12, color: '#374151' }}>
-              {online ? 'Task Boy active around Kozhikode localities' : 'Turn switch on to view live gigs'}
+              {online ? 'Tasker active around Kozhikode localities' : 'Turn switch on to view live gigs'}
             </Text>
           </View>
 

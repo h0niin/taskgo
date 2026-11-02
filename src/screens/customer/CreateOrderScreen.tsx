@@ -257,7 +257,7 @@ export function CreateOrderScreen({ navigation }: any) {
           Post An Errand
         </Text>
         <Text style={{ fontWeight: '700', fontSize: 13, color: '#4B5563' }}>
-          No upfront price. Local Task Boys will submit competitive quotes.
+          No upfront price. Local Taskers will submit competitive quotes.
         </Text>
       </View>
 
@@ -495,7 +495,7 @@ export function CreateOrderScreen({ navigation }: any) {
             Load & Time Estimate (Optional)
           </Text>
           <Text style={{ fontWeight: '700', fontSize: 12, color: '#4B5563' }}>
-            Helps Task Boys price the errand fairly.
+            Helps Taskers price the errand fairly.
           </Text>
           <View style={{ flexDirection: 'row', gap: 10 }}>
             <BrutalInput
@@ -528,7 +528,7 @@ export function CreateOrderScreen({ navigation }: any) {
             <BrutalBadge label={`${attachments.length}/${MAX_ATTACHMENTS}`} color={Neutral.black} />
           </View>
           <Text style={{ fontWeight: '700', fontSize: 12, color: '#4B5563' }}>
-            Add photos or screenshots to help the Task Boy understand the errand.
+            Add photos or screenshots to help the Tasker understand the errand.
           </Text>
 
           {attachments.length > 0 && (

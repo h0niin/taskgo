@@ -666,8 +666,8 @@ export const effectiveRunnerId = (
   adminMode: AdminMode,
 ): string => {
   if (!user) return '';
-  if (user.role === 'ADMIN') return adminMode === 'TASKBOY' ? 'u_run_1' : '';
-  return user.role === 'TASKBOY' ? user.id : '';
+  if (user.role === 'ADMIN') return adminMode === 'TASKER' ? 'u_run_1' : '';
+  return user.role === 'TASKER' ? user.id : '';
 };
 
 /** Orders visible to the customer (their own orders). */

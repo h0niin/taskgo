@@ -6,10 +6,10 @@
  * Contains:
  *   • TaskGo wordmark (bold, uppercase)
  *   • User role badge (BrutalBadge)
- *   • [ Customer Mode ] ↔ [ Task Boy Mode ] toggle — ADMIN ONLY
+ *   • [ Customer Mode ] ↔ [ Tasker Mode ] toggle — ADMIN ONLY
  *   • Logout button
  *
- * The admin toggle is hidden entirely for CUSTOMER and TASKBOY roles.
+ * The admin toggle is hidden entirely for CUSTOMER and TASKER roles.
  */
 
 import React from 'react';
@@ -22,13 +22,13 @@ import type { AdminMode } from '../types/models';
 
 const ROLE_COLORS: Record<string, string> = {
   CUSTOMER: '#8B5CF6',
-  TASKBOY:  '#F97316',
+  TASKER:  '#F97316',
   ADMIN:    '#EC4899',
 };
 
 const ROLE_LABELS: Record<string, string> = {
   CUSTOMER: 'Customer',
-  TASKBOY:  'Task Boy',
+  TASKER:  'Tasker',
   ADMIN:    'Admin',
 };
 
@@ -150,10 +150,10 @@ function AdminToggle({ value, onChange }: AdminToggleProps) {
         onPress={() => onChange('CUSTOMER')}
       />
       <ToggleSegment
-        label="Task Boy Mode"
-        active={value === 'TASKBOY'}
+        label="Tasker Mode"
+        active={value === 'TASKER'}
         activeColor="#F97316"
-        onPress={() => onChange('TASKBOY')}
+        onPress={() => onChange('TASKER')}
       />
     </View>
   );

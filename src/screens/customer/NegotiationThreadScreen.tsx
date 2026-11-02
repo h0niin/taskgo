@@ -113,7 +113,7 @@ export function NegotiationThreadScreen({ route, navigation }: any) {
             <Text style={{ fontWeight: '900', fontSize: 18, textTransform: 'uppercase' }}>
               {thread.runnerName}
             </Text>
-            <BrutalBadge label="Task Boy" color="#F97316" />
+            <BrutalBadge label="Tasker" color="#F97316" />
           </View>
           <Text style={{ fontWeight: '700', fontSize: 12, color: '#4B5563' }}>
             Errand: {order.stops[0]?.address} → {order.stops[order.stops.length - 1]?.address}

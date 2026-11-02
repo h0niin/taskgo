@@ -115,7 +115,7 @@ export function OrderDetailScreen({ route, navigation }: any) {
               <BrutalBadge label={`FEE: ${formatRupees(order.agreedFee ?? 0)}`} color={Neutral.black} />
             </View>
             <Text style={{ fontWeight: '700', fontSize: 13, color: '#1F2937' }}>
-              Task Boy gets {formatRupees(order.agreedFee ?? 0)} · Platform fee ₹60 extra.
+              Tasker gets {formatRupees(order.agreedFee ?? 0)} · Platform fee ₹60 extra.
             </Text>
             <BrutalButton
               label={`Pay Total ${formatRupees((order.agreedFee ?? 0) + 60)} via UPI →`}
@@ -254,7 +254,7 @@ export function OrderDetailScreen({ route, navigation }: any) {
               <View style={{ padding: 16, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                 <View style={{ gap: 2 }}>
                   <Text style={{ fontWeight: '900', fontSize: 16 }}>
-                    {order.assignedRunnerName ?? 'Assigned Task Boy'}
+                    {order.assignedRunnerName ?? 'Assigned Tasker'}
                   </Text>
                   <Text style={{ fontWeight: '700', fontSize: 12, color: '#4B5563' }}>
                     Status: {formatOrderStage(order)}
@@ -294,7 +294,7 @@ export function OrderDetailScreen({ route, navigation }: any) {
                     📥 Bids Inbox
                   </Text>
                   <Text style={{ fontWeight: '700', fontSize: 12, color: '#6B7280' }}>
-                    Task Boys proposing competitive fees
+                    Taskers proposing competitive fees
                   </Text>
                 </View>
                 <BrutalBadge label={`${order.threads.length} BIDS`} color={Neutral.black} />

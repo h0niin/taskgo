@@ -83,7 +83,7 @@ export function TaskPaymentScreen({ route, navigation }: any) {
             </Text>
           </View>
           <Text style={{ fontWeight: '700', fontSize: 13, color: '#1F2937' }}>
-            Pay the agreed fee to start your errand with {order.assignedRunnerName ?? 'your Task Boy'}.
+            Pay the agreed fee to start your errand with {order.assignedRunnerName ?? 'your Tasker'}.
           </Text>
         </View>
 

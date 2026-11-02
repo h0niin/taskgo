@@ -111,7 +111,7 @@ export function CustomerDashboardScreen({ navigation }: any) {
                   </View>
                   <View>
                     <Text style={{ fontWeight: '900', fontSize: 16, color: Neutral.black }}>
-                      {activeOrder.assignedRunnerName ?? 'Task Boy'}
+                      {activeOrder.assignedRunnerName ?? 'Tasker'}
                     </Text>
                     <Text style={{ fontWeight: '700', fontSize: 11, color: '#374151' }}>
                       Step: {formatOrderStage(activeOrder)}
@@ -282,7 +282,7 @@ export function CustomerDashboardScreen({ navigation }: any) {
             </Text>
             <Text style={{ fontWeight: '700', fontSize: 13, color: '#6B7280', textAlign: 'center' }}>
               {activeOrders.length === 0 && myOrders.length === 0
-                ? 'Create an errand in Kozhikode to receive bids from Task Boys!'
+                ? 'Create an errand in Kozhikode to receive bids from Taskers!'
                 : activeOrders.length === 0
                 ? 'Completed and cancelled errands are available in your Profile history.'
                 : `You have no errands with the selected statuses.`}
