@@ -121,7 +121,7 @@ export function NegotiationThreadScreen({ route, navigation }: any) {
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 }}>
             <Clock size={12} color="#6B7280" />
             <Text style={{ fontWeight: '700', fontSize: 11, color: '#6B7280' }}>
-              Offers expire after 10 mins · {countersExchanged}/5 counter rounds used
+              {countersExchanged}/5 counter rounds used
             </Text>
           </View>
         </View>
@@ -192,7 +192,7 @@ export function NegotiationThreadScreen({ route, navigation }: any) {
                         lineHeight: 18,
                       }}
                     >
-                      "{offer.note}"
+                      ({offer.note}
                     </Text>
 
                     {/* Timestamp */}
