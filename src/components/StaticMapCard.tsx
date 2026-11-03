@@ -10,6 +10,7 @@ import MapView, {
 import { BrutalCard } from './BrutalCard';
 import { BrutalBadge } from './BrutalBadge';
 import { Neutral } from '../theme';
+import { getAdminServerUrl } from '../utils/adminBridge';
 import { MapPin, Navigation } from 'lucide-react-native';
 
 interface StaticMapCardProps {
@@ -83,10 +84,9 @@ export function StaticMapCard({
               loadingEnabled
             >
               <UrlTile
-                urlTemplate="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+                urlTemplate={`${getAdminServerUrl()}/api/map-tiles/{z}/{x}/{y}.png`}
                 minimumZ={0}
                 maximumZ={19}
-                tileCacheMaxAge={7 * 24 * 60 * 60}
                 shouldReplaceMapContent={Platform.OS === 'ios'}
                 zIndex={-1}
               />

@@ -10,6 +10,10 @@ The admin service prints a LAN URL at startup. The phone running Expo Go and the
 
 The WhatsApp bot may continue running on port 3001. The dashboard reads its `/api/orders` endpoint; dashboard-created fixed-fee tasks are persisted by the admin service and are returned to Expo Go. Local orders created or advanced in the app are synced back to the dashboard.
 
+Use **Delete all records** in the dashboard to clear its current task list and locally stored orders. This only clears the website's view; it does not delete orders from the mobile app or WhatsApp bot. Cleared order IDs are hidden from future syncs back into the dashboard.
+
+The map preview also loads OpenStreetMap tiles through this local service so tile requests identify TaskGo and can be cached. Keep `npm run admin` running on the same LAN while viewing maps.
+
 ## Fixed-price direct dispatch
 
 Use **Direct dispatch** to create a task, choose a tasker and enter the agreed fixed fee. It skips bidding and creates the task directly as `ASSIGNED`, so it appears in the selected runner's **My Errands** and can proceed through the normal progress/proof flow. This is an admin-authorized dispatch; it does not collect or record a customer payment.
