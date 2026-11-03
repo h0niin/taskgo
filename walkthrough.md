@@ -1,6 +1,6 @@
 # TaskGo Prototype Walkthrough
 
-## ## 2. Sign in
+## 2. Sign in
 
 This mock sign-in screen also offers one-tap demo logins:
 
