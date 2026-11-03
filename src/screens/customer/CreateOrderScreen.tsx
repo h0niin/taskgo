@@ -23,6 +23,7 @@ import { Canvas, Card, CTA, Neutral } from '../../theme';
 import { ORDER_CATEGORIES } from '../../data/seed';
 import { useStore } from '../../store';
 import { Plus, Trash2, Search, MapPin, Camera } from 'lucide-react-native';
+import { computeRouteDistance } from '../../utils/geocoding';
 
 const MAX_ATTACHMENTS = 3;
 
@@ -139,7 +140,15 @@ export function CreateOrderScreen({ navigation }: any) {
 
   const updateStop = (id: string, field: keyof StopDraft, value: string | number) => {
     setStops((currentStops) =>
-      currentStops.map((s) => (s.id === id ? { ...s, [field]: value as any } : s)),
+      currentStops.map((s) =>
+        s.id === id
+          ? {
+              ...s,
+              [field]: value as any,
+              ...(field === 'address' ? { lat: undefined, lng: undefined } : {}),
+            }
+          : s,
+      ),
     );
   };
 
@@ -172,7 +181,7 @@ export function CreateOrderScreen({ navigation }: any) {
     setLocationSearchLoading((p: any) => ({ ...p, [id]: false }));
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     setError(null);
 
     if (!category.trim()) {
@@ -193,6 +202,21 @@ export function CreateOrderScreen({ navigation }: any) {
       }
     }
 
+    // Resolve: use Photon-selected lat/lng if present, else hardcode fallback
+    const lastStopIndex = stops.length - 1;
+    const resolvedStops = stops.map((s, index) => {
+      const hasReal = typeof s.lat === 'number' && Number.isFinite(s.lat) && typeof s.lng === 'number' && Number.isFinite(s.lng);
+      const fallback = index === 0 ? { lat: 11.2588, lng: 75.7804 } : index === lastStopIndex ? { lat: 11.3196773, lng: 75.9316848 } : undefined;
+      return {
+        ...s,
+        lat: hasReal ? s.lat : fallback?.lat,
+        lng: hasReal ? s.lng : fallback?.lng,
+        address: s.address.trim(),
+      };
+    });
+
+    const routeDistanceKm = Math.round((await computeRouteDistance(resolvedStops)) * 10) / 10;
+
     const effectiveCategory =
       category === 'Custom Task' && customCategory.trim()
         ? customCategory.trim()
@@ -200,7 +224,7 @@ export function CreateOrderScreen({ navigation }: any) {
 
     const newOrder = createOrder({
       category: effectiveCategory,
-      stops: stops.map((s) => ({
+      stops: resolvedStops.map((s) => ({
         type: s.type,
         address: s.address.trim(),
         landmark: s.landmark.trim() || undefined,
@@ -211,7 +235,7 @@ export function CreateOrderScreen({ navigation }: any) {
       })),
       edgeCaseInstructions: instructions.trim(),
       attachments,
-      distanceKm: Math.round((2.0 + stops.length * 1.2) * 10) / 10,
+      distanceKm: routeDistanceKm,
       loadWeightKg: loadWeightKg.trim() ? parseFloat(loadWeightKg) : undefined,
       estHours: estHours.trim() ? parseFloat(estHours) : undefined,
     });

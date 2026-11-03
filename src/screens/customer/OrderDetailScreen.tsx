@@ -240,6 +240,10 @@ export function OrderDetailScreen({ route, navigation }: any) {
             <StaticMapCard
               pickupAddress={pickup}
               dropoffAddress={dropoff}
+              pickupLat={order.stops[0]?.lat}
+              pickupLng={order.stops[0]?.lng}
+              dropoffLat={order.stops[order.stops.length - 1]?.lat}
+              dropoffLng={order.stops[order.stops.length - 1]?.lng}
               etaText={
                 order.status === 'PROOF_SUBMITTED'
                   ? undefined
@@ -601,4 +605,3 @@ export function OrderDetailScreen({ route, navigation }: any) {
     </View>
   );
 }
-

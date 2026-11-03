@@ -105,7 +105,7 @@ export function useSimulator() {
 
     orders.forEach((order) => {
       // ── 1. Auto-place bid on PLACED order after 5-8s ───────────────────────
-      if (order.status === 'PLACED') {
+      if (order.status === 'PLACED' || order.status === 'BIDDING') {
         const hasSimBid = order.threads.some(
           (t) => t.runnerId === SIMULATED_RUNNER_ID,
         );

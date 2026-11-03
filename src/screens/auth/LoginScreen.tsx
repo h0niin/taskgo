@@ -90,7 +90,7 @@ export function LoginScreen() {
               textAlign: 'center',
             }}
           >
-            Hyperlocal Errand Runner · Kozhikode
+            Hyperlocal Errand Service · Kozhikode
           </Text>
         </View>
 

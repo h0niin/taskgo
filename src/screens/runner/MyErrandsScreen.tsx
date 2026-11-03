@@ -312,6 +312,10 @@ export function MyErrandsScreen({ navigation }: any) {
                       <StaticMapCard
                         pickupAddress={order.stops[0]?.address}
                         dropoffAddress={order.stops[order.stops.length - 1]?.address}
+                        pickupLat={order.stops[0]?.lat}
+                        pickupLng={order.stops[0]?.lng}
+                        dropoffLat={order.stops[order.stops.length - 1]?.lat}
+                        dropoffLng={order.stops[order.stops.length - 1]?.lng}
                         etaText={
                           isProofSubmitted
                             ? undefined

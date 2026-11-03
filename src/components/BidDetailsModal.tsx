@@ -41,7 +41,7 @@ export function BidDetailsModal({
 
   const confirm = () => {
     if (!/^\d+$/.test(draftAmount) || Number(draftAmount) < minAmount) {
-      const msg = `Amount cannot be below ₹${minAmount}.`;
+      const msg = `Amount cannot be below Base Price: ₹${minAmount}.`;
       setError(msg);
       Alert.alert('Invalid Amount', msg);
       return;

@@ -1,5 +1,5 @@
 import React from 'react';
-import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, Text, TouchableOpacity, View, Linking } from 'react-native';
 import { BrutalBadge, BrutalButton, BrutalCard } from '../../components';
 import { Canvas, Card, CTA, Neutral } from '../../theme';
 import { effectiveCustomerId, selectCustomerOrders, useStore } from '../../store';
@@ -138,6 +138,14 @@ export function CustomerProfileScreen({ navigation }: any) {
           ))
         )}
       </View>
+
+      <BrutalButton
+        label="Contact Support"
+        size="sm"
+        color="#8B5CF6"
+        fullWidth
+        onPress={async () => Linking.openURL('mailto:support@example.com')}
+      />
 
       <BrutalButton
         label="Log Out"

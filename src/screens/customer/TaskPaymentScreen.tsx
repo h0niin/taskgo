@@ -167,7 +167,7 @@ export function TaskPaymentScreen({ route, navigation }: any) {
             </View>
 
             <BrutalButton
-              label={`PAY ${formatRupees(agreedFee)} VIA UPI`}
+              label={`PAY ${formatRupees(agreedFee + 60)} VIA UPI`}
               color={CTA.lime}
               fullWidth
               size="lg"
@@ -181,7 +181,7 @@ export function TaskPaymentScreen({ route, navigation }: any) {
       {/* Mock UPI Sheet */}
       <UpiPaymentSheet
         visible={upiSheetVisible}
-        amount={agreedFee}
+        amount={agreedFee + 60}
         paymentTitle="Task Fee Payment"
         onClose={() => setUpiSheetVisible(false)}
         onSuccess={handleUpiSuccess}
